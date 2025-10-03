@@ -1,0 +1,4085 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+  <title>PRISM · Chant & Tasks</title>
+  <style>
+    * { box-sizing: border-box }
+    :root {
+      --bg: #0b1020; --card: #111827; --muted: #94a3b8; --text: #e5e7eb;
+      --pri: #22c55e; --warn: #ef4444; --accent: #6366f1; --line: #334155;
+      --font: system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+    }
+    html, body { height: 100%; margin: 0; overflow-x: hidden; }
+    body { 
+      background: var(--bg); color: var(--text); font-family: var(--font);
+      display: flex; flex-direction: column; min-height: 100vh;
+    }
+    
+    /* Layout */
+    .app { flex: 1; display: flex; flex-direction: column; padding-bottom: 85px; }
+    .main { 
+      flex: 1; padding: 8px; max-width: 420px; margin: 0 auto; width: 100%; 
+      height: calc(100vh - 85px); display: flex; flex-direction: column;
+    }
+    
+    /* Typography */
+    h1 { font-size: 16px; margin: 4px 0 6px; color: #93c5fd; text-align: center; }
+    h2 { font-size: 14px; margin: 8px 0 6px; color: #93c5fd; }
+    h3 { font-size: 13px; margin: 6px 0 4px; color: var(--text); }
+    h4 { font-size: 12px; margin: 4px 0 3px; color: var(--text); font-weight: 600; }
+    
+    /* Buttons */
+    .btn {
+      display: block; width: 100%; padding: 12px; border: none; border-radius: 10px;
+      font-weight: 600; font-size: 14px; color: #fff; cursor: pointer;
+      min-height: 44px; touch-action: manipulation; user-select: none;
+    }
+    .btn.pri { background: #339af0; color: white; }
+    .btn.ok { background: #51cf66; color: white; }
+    .btn.acc { background: var(--accent); }
+    .btn.warn { background: #ff6b6b; color: white; }
+    .btn.info { background: #17a2b8; color: white; }
+    .btn.orange { background: #f59e0b; color: white; }
+    .btn.blue { background: #3b82f6; color: white; }
+    .btn.secondary { background: #6c757d; color: white; }
+    .btn.small { padding: 6px 10px; font-size: 12px; width: auto; display: inline-block; min-height: 36px; }
+    .btn:focus { outline: 2px solid #93c5fd; outline-offset: 2px; }
+    .btn:active { transform: scale(0.98); transition: transform 0.1s; }
+    
+    /* Cards */
+    .card { 
+      background: var(--card); border: 1px solid var(--line); border-radius: 10px; 
+      padding: 10px; margin-bottom: 6px;
+    }
+    .card.shadow { box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); }
+    
+    /* Utility */
+    .hidden { display: none !important; }
+    .muted { color: #64748b; font-size: 12px; }
+    .info-text { color: #3b82f6; font-size: 12px; }
+    .success-text { color: #10b981; font-size: 12px; }
+    .warning-text { color: #f59e0b; font-size: 12px; }
+    .error-text { color: #ef4444; font-size: 12px; }
+    .sp { height: 6px; }
+    .center { text-align: center; }
+    .flex { display: flex; gap: 6px; align-items: center; }
+    .flex-wrap { flex-wrap: wrap; }
+    .flex-between { justify-content: space-between; }
+    .flex-center { justify-content: center; }
+    .flex-col { flex-direction: column; }
+    
+    /* Bottom Tab Bar */
+    .tab-bar {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--card); border-top: 1px solid var(--line);
+      display: flex; height: 75px; z-index: 10; box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+    .tab-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; border: none; background: none; color: #3b82f6;
+      cursor: pointer; font-size: 10px; min-height: 48px; padding: 6px 4px;
+      touch-action: manipulation; user-select: none;
+    }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn:focus { outline: 2px solid #93c5fd; outline-offset: -2px; }
+    .tab-btn:active { background: rgba(255,255,255,0.1); }
+    .tab-icon { font-size: 18px; margin-bottom: 2px; }
+    
+    /* Settings Gear */
+    .settings-btn {
+      position: fixed; top: 12px; right: 12px; background: var(--card);
+      border: 1px solid var(--line); border-radius: 50%; width: 40px; height: 40px;
+      color: var(--muted); cursor: pointer; font-size: 16px; z-index: 5;
+    }
+    .settings-btn:focus { outline: 2px solid #93c5fd; }
+    
+    /* Modal/Drawer Overlay */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.8); z-index: 20; 
+      display: flex; align-items: end; justify-content: center;
+    }
+    .modal {
+      background: var(--bg); border-radius: 12px 12px 0 0;
+      max-width: 420px; width: 100%; max-height: 80vh; overflow-y: auto;
+      padding: 16px; border: 1px solid var(--line);
+    }
+    .drawer {
+      background: var(--bg); border-radius: 12px 12px 0 0;
+      max-width: 420px; width: 100%; max-height: 60vh; overflow-y: auto;
+      padding: 16px; border: 1px solid var(--line);
+    }
+    
+    /* Form Elements */
+    .form-group { margin-bottom: 12px; }
+    .form-label { display: block; margin-bottom: 4px; font-weight: 600; font-size: 14px; }
+    .form-input {
+      width: 100%; padding: 12px; border: 1px solid var(--line);
+      border-radius: 8px; background: var(--card); color: var(--text);
+      font-size: 16px;
+    }
+    .form-input:focus { outline: 2px solid var(--accent); border-color: var(--accent); }
+    
+    /* Chips */
+    .chip {
+      display: inline-block; padding: 3px 6px; border-radius: 12px;
+      font-size: 10px; font-weight: 500; border: 1px solid var(--line);
+      background: var(--card); color: var(--text); margin: 1px;
+      line-height: 1.2;
+    }
+    .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .chip.clickable { cursor: pointer; touch-action: manipulation; min-height: 24px; }
+    .chip.clickable:active { transform: scale(0.95); }
+    
+    /* Points Ring (SVG) */
+    .points-ring {
+      width: 100px; height: 100px; margin: 12px auto; display: block;
+    }
+    
+    /* Task Lists */
+    .task-lane { margin-bottom: 12px; }
+    .task-lane h3 { 
+      display: flex; align-items: center; justify-content: space-between; 
+      color: var(--text); font-size: 13px; margin-bottom: 6px;
+    }
+    .task-item {
+      background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+      padding: 10px; margin-bottom: 6px; display: flex; align-items: center; gap: 10px;
+      min-height: 48px; touch-action: manipulation; user-select: none;
+    }
+    .task-item:active { background: rgba(255,255,255,0.05); transform: scale(0.99); }
+    .task-content { flex: 1; }
+    .task-title { font-weight: 600; margin-bottom: 2px; font-size: 13px; line-height: 1.3; }
+    .task-meta { display: flex; gap: 3px; flex-wrap: wrap; }
+    .task-points { 
+      background: var(--accent); color: white; border-radius: 50%;
+      width: 22px; height: 22px; display: flex; align-items: center;
+      justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0;
+    }
+    .finished-task {
+      opacity: 0.7; background: linear-gradient(135deg, var(--card) 0%, #1a2e1a 100%);
+      border-color: var(--pri);
+    }
+    .finished-task .task-title {
+      text-decoration: line-through; color: #10b981;
+    }
+    .finished-task .task-points {
+      background: var(--pri);
+    }
+    
+    /* Stepper */
+    .stepper { display: flex; align-items: center; gap: 8px; }
+    .stepper button {
+      width: 32px; height: 32px; border: 1px solid var(--line);
+      border-radius: 6px; background: var(--card); color: var(--text);
+      cursor: pointer; font-weight: 700;
+    }
+    .stepper span { min-width: 20px; text-align: center; font-weight: 600; }
+    
+    /* Chant-specific styles */
+    .chant-container {
+      flex: 1; display: flex; flex-direction: column; justify-content: center;
+      align-items: center; gap: 16px; min-height: calc(100vh - 150px);
+    }
+    .tap-zone {
+      position: relative; width: 100%; max-width: 360px; height: 300px;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(circle at 50% 40%, #14532d 0%, #064e3b 65%, #052e2b 100%);
+      border-radius: 16px; border: 1px solid #0e3b2f; cursor: pointer;
+      user-select: none; -webkit-tap-highlight-color: transparent;
+    }
+    .count-display { 
+      font-size: 72px; font-weight: 900; color: #fef3c7; 
+      text-shadow: 0 2px 0 rgba(0,0,0,.25);
+    }
+    .session-start { 
+      position: absolute; top: 10px; left: 12px; 
+      font-size: 11px; color: #a7f3d0;
+    }
+    .dec-btn {
+      position: absolute; bottom: 12px; left: 12px;
+      background: var(--warn); color: white; border: none;
+      width: 44px; height: 44px; border-radius: 50%; 
+      font-size: 22px; font-weight: 900; cursor: pointer;
+    }
+    .finish-btn {
+      position: absolute; bottom: 12px; right: 12px;
+      background: var(--accent); color: white; border: none;
+      border-radius: 20px; padding: 10px 16px; 
+      font-size: 14px; font-weight: 700; cursor: pointer;
+    }
+    
+    /* Stats */
+    .stats-header { margin-bottom: 8px; }
+    .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+    .stat-box { text-align: center; padding: 8px; }
+    .stat-number { font-size: 16px; font-weight: 900; color: var(--accent); line-height: 1.2; }
+    .stat-label { font-size: 10px; color: #3b82f6; margin-top: 2px; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+    th, td { border-bottom: 1px solid var(--line); padding: 8px 6px; font-size: 14px; text-align: left; }
+    
+    /* Progress bars */
+    .progress-bar {
+      width: 100%; height: 8px; background: var(--line); border-radius: 4px;
+      overflow: hidden; margin: 4px 0;
+    }
+    .progress-fill {
+      height: 100%; background: var(--accent); border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+    
+    /* Toast */
+    .toast {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      background: var(--card); color: var(--text); padding: 12px 20px;
+      border-radius: 8px; border: 1px solid var(--line); z-index: 30;
+      font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    
+    /* Focus Screen */
+    .focus-container { padding: 20px 0; }
+    .current-task {
+      background: linear-gradient(135deg, var(--card) 0%, #1a202c 100%);
+      border: 1px solid var(--line); border-radius: 16px; padding: 20px;
+      margin-bottom: 20px; text-align: center;
+    }
+    .task-timer { font-size: 48px; font-weight: 900; color: var(--accent); margin: 16px 0; }
+    .action-buttons { display: flex; gap: 12px; margin-top: 20px; }
+    .task-nav { display: flex; justify-content: space-between; align-items: center; margin: 16px 0; }
+    
+    /* Hourly Log */
+    .hour-slot {
+      background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+      padding: 12px; margin-bottom: 8px; display: flex; align-items: center;
+      justify-content: space-between; gap: 12px;
+    }
+    .hour-slot.logged {
+      background: linear-gradient(135deg, var(--card) 0%, #1a3d2e 100%);
+      border-color: var(--pri);
+    }
+    .hour-time {
+      font-weight: 700; color: var(--text); min-width: 80px;
+    }
+    .hour-content {
+      flex: 1; font-size: 14px;
+    }
+    .hour-summary {
+      color: #3b82f6; margin-bottom: 4px;
+    }
+    .hour-feeling-rating {
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .hour-actions {
+      display: flex; gap: 8px;
+    }
+    .hour-entry-empty {
+      color: #f59e0b; font-style: italic;
+    }
+    
+    /* Daily View Scrolling Fix */
+    #tab-daily > div:last-child {
+      flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    
+    /* Clickable Cards */
+    .clickable-card {
+      transition: all 0.2s ease;
+      touch-action: manipulation;
+    }
+    .clickable-card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-1px);
+    }
+    .clickable-card:active {
+      transform: translateY(0);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    
+    .progress-fill {
+      height: 100%;
+      background: var(--pri);
+      transition: width 0.3s ease;
+    }
+    
+    .stepper {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .stepper button {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      border-radius: 4px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .stepper button:hover {
+      background: #f1f5f9;
+    }
+    
+    .stepper span {
+      min-width: 40px;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    /* Points Input Container */
+    .points-input-container {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      background: var(--card);
+    }
+    
+    .points-btn {
+      width: 40px;
+      height: 40px;
+      border: none;
+      background: var(--card);
+      color: var(--text);
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s ease;
+    }
+    
+    .points-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .points-btn:active {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    
+    .points-btn.minus {
+      border-right: 1px solid var(--line);
+    }
+    
+    .points-btn.plus {
+      border-left: 1px solid var(--line);
+    }
+    
+    .points-text-input {
+      flex: 1;
+      border: none;
+      background: var(--card);
+      color: var(--text);
+      text-align: center;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 8px 12px;
+      outline: none;
+      min-width: 80px;
+    }
+    
+    .points-text-input:focus {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    @media (max-width: 480px) {
+      .count-display { font-size: 60px; }
+      .tap-zone { height: 250px; }
+      .modal { max-height: 90vh; }
+      .main { padding: 6px; }
+      h1 { font-size: 14px; }
+      .points-ring { width: 80px; height: 80px; }
+      .stats-grid { grid-template-columns: 1fr 1fr; gap: 4px; }
+      .stat-number { font-size: 14px; }
+      .stat-label { font-size: 9px; }
+    }
+    
+    @media (max-width: 320px) {
+      .main { padding: 4px; }
+      .card { padding: 8px; margin-bottom: 4px; }
+      .task-item { padding: 8px; gap: 8px; min-height: 44px; }
+      .task-title { font-size: 12px; }
+      .task-points { width: 20px; height: 20px; font-size: 10px; }
+      .chip { padding: 2px 4px; font-size: 9px; }
+      .btn { padding: 10px; font-size: 13px; }
+      .btn.small { padding: 5px 8px; font-size: 11px; min-height: 32px; }
+      .tab-btn { font-size: 9px; padding: 4px 2px; }
+      .tab-icon { font-size: 16px; }
+      .app { padding-bottom: 70px; }
+      .main { height: calc(100vh - 70px); }
+      #tab-tasks, #tab-chant, #tab-steps { overflow-y: auto; }
+      #tab-daily > div:last-child { flex: 1; min-height: 0; overflow-y: auto !important; }
+      .tab-bar { height: 65px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <button class="settings-btn" onclick="openSettings()" aria-label="Settings">⚙</button>
+    
+    <!-- Tasks Tab -->
+    <div id="tab-tasks" class="main" style="overflow-y: auto;">
+      <h1>Daily Tasks</h1>
+      
+      <!-- Date Selector -->
+      <div class="form-group" style="margin-bottom: 8px;">
+        <div class="flex">
+          <input id="tasks-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" onchange="setCurrentDate(this.value)" />
+          <button class="btn orange small" onclick="setCurrentDate(PrismUtils.todayKey())">Today</button>
+        </div>
+      </div>
+      
+      <!-- Daily Points Ring -->
+      <div class="center">
+        <svg class="points-ring" viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="50" stroke="var(--line)" stroke-width="8" fill="none"/>
+          <circle id="progress-circle" cx="60" cy="60" r="50" stroke="var(--accent)" stroke-width="8" 
+                  fill="none" stroke-linecap="round" stroke-dasharray="314" stroke-dashoffset="314"
+                  transform="rotate(-90 60 60)"/>
+          <text x="60" y="55" text-anchor="middle" fill="var(--text)" font-size="18" font-weight="700" id="points-completed">0</text>
+          <text x="60" y="70" text-anchor="middle" fill="#3b82f6" font-size="12" id="points-goal">/ 24</text>
+        </svg>
+      </div>
+      
+      <!-- Main Action Buttons -->
+      <div class="flex" style="margin-bottom: 16px;">
+        <button class="btn acc" onclick="startFocus()">🎯 Start Focus</button>
+        <button class="btn pri" onclick="openTaskModal()">+ Add Task</button>
+      </div>
+      
+      <!-- Task Lanes -->
+      <div class="task-lane">
+        <h3>Now <span id="now-count" class="chip">0/5</span></h3>
+        <div id="now-tasks"></div>
+      </div>
+      
+        <button class="btn secondary small" onclick="toggleOtherLanes()" id="toggle-lanes">Show Next, Later & Finished</button>
+      
+      <div id="other-lanes" class="hidden">
+        <div class="task-lane">
+          <h3>Next <span id="next-count" class="chip">0</span></h3>
+          <div id="next-tasks"></div>
+        </div>
+        
+        <div class="task-lane">
+          <h3>Later <span id="later-count" class="chip">0</span></h3>
+          <div id="later-tasks"></div>
+        </div>
+        
+        <div class="task-lane">
+          <h3>Finished <span id="finished-count" class="chip">0</span></h3>
+          <div id="finished-tasks"></div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Chant Tab -->
+    <div id="tab-chant" class="main hidden" style="overflow-y: auto;">
+      <div class="chant-container">
+        <h1>Gayathri Mantra</h1>
+        
+        <div class="tap-zone" onclick="incrementChant()" aria-label="Tap to increment count">
+          <div class="session-start" id="session-start"></div>
+          <div class="count-display" id="chant-count">0</div>
+          <button class="dec-btn" onclick="event.stopPropagation(); decrementChant()" aria-label="Decrement">−</button>
+          <button class="finish-btn" onclick="event.stopPropagation(); finishAndSaveChant()" aria-label="Finish session">Finish</button>
+        </div>
+        
+        <!-- Chant Stats Card -->
+        <div class="card shadow" style="margin-top: 16px;">
+          <div id="today-chant-summary" class="info-text">No sessions yet today.</div>
+          
+          <!-- Daily Goal Progress -->
+          <div id="chant-goal-section" style="margin-top: 12px;">
+            <div class="flex flex-between">
+              <span class="warning-text">Daily Goal</span>
+              <span id="chant-progress-text">0 / 108</span>
+            </div>
+            <div class="progress-bar">
+              <div id="chant-progress-fill" class="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <button class="btn orange small" onclick="showChantStats()" style="margin-top: 12px;">📊 View Stats</button>
+      </div>
+    </div>
+    
+    <!-- Steps Tab -->
+    <div id="tab-steps" class="main hidden" style="overflow-y: auto;">
+      <div class="steps-container">
+        <h1>Step Counter</h1>
+        
+        <!-- Current Session Display -->
+        <div class="card shadow" style="margin-bottom: 16px;">
+          <div class="flex flex-between" style="margin-bottom: 8px;">
+            <h3 style="margin: 0;">Current Session</h3>
+            <div id="step-session-status" class="chip" style="background: #64748b;">Inactive</div>
+          </div>
+          
+          <div class="step-display" style="text-align: center; margin: 16px 0;">
+            <div id="current-steps" style="font-size: 48px; font-weight: bold; color: var(--accent);">0</div>
+            <div class="info-text">Steps this session</div>
+          </div>
+          
+          <div id="session-timer" class="info-text" style="text-align: center; margin-bottom: 16px;">00:00:00</div>
+          
+          <div class="action-buttons">
+            <button class="btn ok" id="start-walking-btn" onclick="startWalkingSession()">🚶 Start Walking</button>
+            <button class="btn warn hidden" id="stop-walking-btn" onclick="stopWalkingSession()">⏹ Finish Walking</button>
+          </div>
+        </div>
+        
+        <!-- Daily Progress -->
+        <div class="card shadow" style="margin-bottom: 16px;">
+          <h3 style="margin: 0 0 8px;">Today's Progress</h3>
+          
+          <div class="flex flex-between" style="margin-bottom: 4px;">
+            <span class="warning-text">Daily Goal</span>
+            <span id="daily-steps-progress">0 / 10,000</span>
+          </div>
+          <div class="progress-bar">
+            <div id="daily-steps-fill" class="progress-fill" style="width: 0%"></div>
+          </div>
+          
+          <div class="stats-grid" style="margin-top: 12px;">
+            <div class="stat-box">
+              <div class="stat-number" id="total-steps-today">0</div>
+              <div class="stat-label">Total Steps</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="walking-sessions-today">0</div>
+              <div class="stat-label">Sessions</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-number" id="active-hours-today">0</div>
+              <div class="stat-label">Active Hours</div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Recent Sessions -->
+        <div class="card shadow">
+          <div class="flex flex-between" style="margin-bottom: 8px;">
+            <h3 style="margin: 0;">Recent Sessions</h3>
+            <button class="btn orange small" onclick="showStepStats()">📊 View All</button>
+          </div>
+          <div id="recent-step-sessions">
+            <div class="info-text">No walking sessions yet today.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Focus Screen -->
+    <div id="focus-screen" class="main hidden">
+      <div class="focus-container">
+        <h1>Focus Session</h1>
+        
+        <!-- Timer Display -->
+        <div class="current-task">
+          <div id="session-phase" class="info-text" style="text-align: center; margin-bottom: 8px;">Work Session</div>
+          <div class="task-timer" id="focus-timer">30:00</div>
+          
+          <!-- Session Timer Controls -->
+          <div class="timer-controls" style="display: flex; gap: 8px; justify-content: center; margin: 8px 0; font-size: 12px;">
+            <div class="timer-control">
+              <label>Work:</label>
+              <input type="number" id="session-work-duration" min="1" max="120" value="30" style="width: 50px; padding: 2px; margin-left: 4px;">
+              <span>min</span>
+            </div>
+            <div class="timer-control">
+              <label>Reflect:</label>
+              <input type="number" id="session-reflection-duration" min="1" max="30" value="5" style="width: 40px; padding: 2px; margin-left: 4px;">
+              <span>min</span>
+            </div>
+            <div class="timer-control">
+              <label>Break:</label>
+              <input type="number" id="session-break-duration" min="1" max="60" value="10" style="width: 40px; padding: 2px; margin-left: 4px;">
+              <span>min</span>
+            </div>
+          </div>
+          
+          <div class="action-buttons">
+            <button class="btn ok" id="focus-start-btn" onclick="toggleFocusTimer()">Start Session</button>
+            <button class="btn warn" id="focus-pause-btn" onclick="pauseFocusTimer()" style="display: none;">Pause</button>
+            <button class="btn info" onclick="skipPhase()" id="focus-skip-btn" style="display: none;">Skip Phase</button>
+            <button class="btn info" onclick="applySessionTimers()" id="apply-timers-btn">Apply Timers</button>
+          </div>
+        </div>
+        
+        <!-- Active Tasks List -->
+        <div class="card" style="margin-top: 16px;">
+          <div class="flex flex-between" style="margin-bottom: 8px;">
+            <h3 style="margin: 0;">Active Tasks</h3>
+            <button class="btn pri small" onclick="addTaskToFocus()">+ Add Task</button>
+          </div>
+          <div id="focus-tasks-list">
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+        
+        <!-- Session Stats -->
+        <div class="card" style="margin-top: 12px;">
+          <h4>Session Progress</h4>
+          <div id="session-stats" class="success-text" style="font-size: 12px;">
+            Sessions completed: 0 | Total focus time: 0 min
+          </div>
+        </div>
+        
+        <button class="btn small" onclick="exitFocus()" style="margin-top: 12px;">← End Session</button>
+      </div>
+    </div>
+    
+    <!-- Chant Stats Screen -->
+    <div id="chant-stats-screen" class="main hidden">
+      <h1>Chant Statistics</h1>
+      
+      <div class="form-group">
+        <div class="flex">
+          <input id="chant-month-picker" type="month" class="form-input" />
+          <button class="btn orange small" onclick="refreshChantStats()">Load</button>
+        </div>
+      </div>
+      
+      <div class="card stats-header">
+        <div class="stats-grid" id="chant-stats-grid">
+          <div class="stat-box">
+            <div class="stat-number" id="chant-total-sessions">0</div>
+            <div class="stat-label">Sessions</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="chant-total-counts">0</div>
+            <div class="stat-label">Total Counts</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="chant-avg-daily">0</div>
+            <div class="stat-label">Avg/Day</div>
+          </div>
+        </div>
+      </div>
+      
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Sessions</th><th>Counts</th></tr>
+        </thead>
+        <tbody id="chant-stats-body">
+          <tr><td colspan="3">—</td></tr>
+        </tbody>
+      </table>
+      
+      <div id="chant-session-details" style="margin-top: 16px;"></div>
+      
+      <button class="btn pri" onclick="exitChantStats()">← Back</button>
+    </div>
+  </div>
+  
+  <!-- Step Stats Screen -->
+  <div id="step-stats-screen" class="main hidden">
+    <h1>Step Statistics</h1>
+    
+    <div class="form-group">
+      <div class="flex">
+        <input id="step-month-picker" type="month" class="form-input" />
+        <button class="btn orange small" onclick="refreshStepStats()">Load</button>
+      </div>
+    </div>
+    
+    <div class="card stats-header">
+      <div class="stats-grid" id="step-stats-grid">
+        <div class="stat-box">
+          <div class="stat-number" id="step-total-sessions">0</div>
+          <div class="stat-label">Sessions</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="step-total-steps">0</div>
+          <div class="stat-label">Total Steps</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-number" id="step-avg-daily">0</div>
+          <div class="stat-label">Avg/Day</div>
+        </div>
+      </div>
+    </div>
+    
+    <table>
+      <thead>
+        <tr><th>Date</th><th>Sessions</th><th>Steps</th><th>Hours Active</th></tr>
+      </thead>
+      <tbody id="step-stats-body">
+        <tr><td colspan="4">—</td></tr>
+      </tbody>
+    </table>
+    
+    <div id="step-session-details" style="margin-top: 16px;"></div>
+    
+    <button class="btn pri" onclick="exitStepStats()">← Back</button>
+  </div>
+  
+  <!-- Hourly Log Tab -->
+  <div id="tab-hourly" class="main hidden">
+    <h1 style="margin: 2px 0 6px;">Hourly Activity Log</h1>
+    
+    <!-- Date Selector -->
+    <div class="form-group" style="margin-bottom: 8px;">
+      <div class="flex">
+        <input id="hourly-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" />
+        <button class="btn orange small" onclick="refreshHourlyLog()">Load</button>
+      </div>
+    </div>
+    
+    <!-- Hourly Timeline -->
+    <div id="hourly-timeline" style="flex: 1; overflow-y: auto;">
+      <!-- Will be populated by JavaScript -->
+    </div>
+    
+        <button class="btn orange small" onclick="showHourlyStats()" style="margin: 8px 0;">📊 View Details</button>
+    
+    <div style="height: 20px;"></div>
+  </div>
+  
+  <!-- Hourly Log Stats/Details Screen -->
+  <div id="hourly-stats-screen" class="main hidden">
+    <h1 style="margin: 2px 0 6px;">Hourly Log Details</h1>
+    
+    <div class="form-group" style="margin-bottom: 8px;">
+      <div class="flex">
+        <input id="hourly-stats-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" />
+        <button class="btn orange small" onclick="refreshHourlyStats()">Load</button>
+      </div>
+    </div>
+    
+    <div id="hourly-stats-content" style="flex: 1; overflow-y: auto;">
+      <!-- Will be populated by JavaScript -->
+    </div>
+    
+    <button class="btn pri" onclick="exitHourlyStats()" style="margin: 8px 0;">← Back</button>
+    <div style="height: 20px;"></div>
+  </div>
+  
+  <!-- Daily Tasks View Tab -->
+  <div id="tab-daily" class="main hidden">
+    <h1 style="margin: 2px 0 6px;">Daily Tasks Overview</h1>
+    
+    <!-- Date Selector -->
+    <div class="form-group" style="margin-bottom: 8px;">
+      <div class="flex">
+        <input id="daily-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" />
+        <button class="btn orange small" onclick="refreshDailyView()">Load</button>
+      </div>
+    </div>
+    
+    <!-- Daily View Menu -->
+    <div style="flex: 1; overflow-y: auto;">
+      <!-- Daily Overview Card - Clickable -->
+      <div class="card shadow clickable-card" onclick="openDailyOverviewPopup()" style="margin-bottom: 8px; cursor: pointer;">
+        <div class="flex flex-between">
+          <div>
+            <h3 style="margin: 0 0 4px;">📊 Daily Overview</h3>
+            <div class="info-text" style="font-size: 11px;" id="overview-preview">Tap to view detailed insights</div>
+          </div>
+          <div style="color: var(--accent); font-size: 18px;">→</div>
+        </div>
+      </div>
+
+      <!-- Daily Goals Card - Clickable -->
+      <div class="card shadow clickable-card" onclick="openDailyGoalsPopup()" style="margin-bottom: 8px; cursor: pointer;">
+        <div class="flex flex-between">
+          <div>
+            <h3 style="margin: 0 0 4px;">🎯 Daily Goals</h3>
+            <div class="warning-text" style="font-size: 11px;" id="goals-preview">Points, chants & completion</div>
+          </div>
+          <div style="color: var(--accent); font-size: 18px;">→</div>
+        </div>
+      </div>
+      
+      <!-- Tasks by Tag Card - Clickable -->
+      <div class="card shadow clickable-card" onclick="openTasksByTagPopup()" style="margin-bottom: 8px; cursor: pointer;">
+        <div class="flex flex-between">
+          <div>
+            <h3 style="margin: 0 0 4px;">🏷️ Tasks by Tag</h3>
+            <div class="success-text" style="font-size: 11px;" id="tags-preview">Priority & energy breakdown</div>
+          </div>
+          <div style="color: var(--accent); font-size: 18px;">→</div>
+        </div>
+      </div>
+      
+      <!-- Task Timeline Card - Clickable -->
+      <div class="card shadow clickable-card" onclick="openTaskTimelinePopup()" style="margin-bottom: 8px; cursor: pointer;">
+        <div class="flex flex-between">
+          <div>
+            <h3 style="margin: 0 0 4px;">⏰ Task Timeline</h3>
+            <div class="error-text" style="font-size: 11px;" id="timeline-preview">Completed tasks chronology</div>
+          </div>
+          <div style="color: var(--accent); font-size: 18px;">→</div>
+        </div>
+      </div>
+      
+      <div style="height: 20px;"></div>
+    </div>
+  </div>
+  
+  <!-- Bottom Tab Bar -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('tasks')" aria-label="Tasks Tab">
+      <div class="tab-icon">✓</div>
+      <div>Tasks</div>
+    </button>
+    <button class="tab-btn" onclick="switchTab('chant')" aria-label="Chant Tab">
+      <div class="tab-icon">🕉</div>
+      <div>Chant</div>
+    </button>
+    <button class="tab-btn" onclick="switchTab('steps')" aria-label="Steps Tab">
+      <div class="tab-icon">👟</div>
+      <div>Steps</div>
+    </button>
+    <button class="tab-btn" onclick="switchTab('hourly')" aria-label="Hourly Log Tab">
+      <div class="tab-icon">⏰</div>
+      <div>Hourly</div>
+    </button>
+    <button class="tab-btn" onclick="switchTab('daily')" aria-label="Daily View Tab">
+      <div class="tab-icon">📊</div>
+      <div>Daily</div>
+    </button>
+  </div>
+  
+  <!-- Task Modal -->
+  <div id="task-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 id="modal-title">Add Task</h2>
+      <form onsubmit="saveTask(event)">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input id="task-title" class="form-input" placeholder="e.g., Email client, 2pt Review docs" required />
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Planned Points</label>
+          <div class="points-input-container">
+            <button type="button" class="points-btn minus" onclick="adjustPoints(-0.5)">−</button>
+            <input type="number" id="task-points-input" class="points-text-input" min="0.1" step="0.1" onchange="updatePointsFromInput()" placeholder="1.0" value="1">
+            <button type="button" class="points-btn plus" onclick="adjustPoints(0.5)">+</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Completed Points</label>
+          <div class="points-input-container">
+            <button type="button" class="points-btn minus" onclick="adjustCompletedTaskPoints(-0.5)">−</button>
+            <input type="number" id="task-completed-points-input" class="points-text-input" min="0" step="0.1" onchange="updateCompletedPointsFromInput()" placeholder="0.0" value="0">
+            <button type="button" class="points-btn plus" onclick="adjustCompletedTaskPoints(0.5)">+</button>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <div id="priority-chips">
+            <span class="chip clickable active" data-priority="Do" onclick="selectPriority('Do')">Do</span>
+            <span class="chip clickable" data-priority="Plan" onclick="selectPriority('Plan')">Plan</span>
+            <span class="chip clickable" data-priority="Delegate" onclick="selectPriority('Delegate')">Delegate</span>
+            <span class="chip clickable" data-priority="Drop" onclick="selectPriority('Drop')">Drop</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Energy</label>
+          <div id="energy-chips">
+            <span class="chip clickable" data-energy="low" onclick="selectEnergy('low')">Low</span>
+            <span class="chip clickable active" data-energy="med" onclick="selectEnergy('med')">Med</span>
+            <span class="chip clickable" data-energy="high" onclick="selectEnergy('high')">High</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Bucket</label>
+          <div id="bucket-chips">
+            <span class="chip clickable active" data-bucket="Now" onclick="selectBucket('Now')">Now</span>
+            <span class="chip clickable" data-bucket="Next" onclick="selectBucket('Next')">Next</span>
+            <span class="chip clickable" data-bucket="Later" onclick="selectBucket('Later')">Later</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Due Date (optional)</label>
+          <input id="task-due" class="form-input" type="date" />
+        </div>
+        
+        <div class="flex" style="margin-top: 20px;">
+          <button type="button" class="btn orange" onclick="closeTaskModal()">Cancel</button>
+          <button type="button" class="btn ok" id="finish-task-btn" onclick="finishTaskFromModal()" style="display: none;">✓ Mark Finished</button>
+          <button type="submit" class="btn pri">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Settings Modal -->
+  <div id="settings-modal" class="modal-overlay hidden">
+    <div class="drawer">
+      <h2>Settings</h2>
+      
+      <div class="form-group">
+        <label class="form-label">Daily Points Goal</label>
+        <input id="settings-points-goal" class="form-input" type="number" min="1" value="24" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Hourly Points Goal</label>
+        <input id="settings-hourly-goal" class="form-input" type="number" min="1" value="6" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Daily Chant Goal</label>
+        <input id="settings-chant-goal" class="form-input" type="number" min="1" value="108" />
+      </div>
+      
+      <h3 style="margin-top: 16px;">Focus Timer Settings</h3>
+      
+      <div class="form-group">
+        <label class="form-label">Work Session (minutes)</label>
+        <input id="settings-work-duration" class="form-input" type="number" min="1" max="120" value="30" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Reflection Time (minutes)</label>
+        <input id="settings-reflection-duration" class="form-input" type="number" min="1" max="30" value="5" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Break Time (minutes)</label>
+        <input id="settings-break-duration" class="form-input" type="number" min="1" max="60" value="10" />
+      </div>
+      
+      <h3 style="margin-top: 16px;">Step Counter Settings</h3>
+      
+      <div class="form-group">
+        <label class="form-label">Daily Step Goal</label>
+        <input id="settings-daily-steps" class="form-input" type="number" min="1000" max="50000" value="10000" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Hourly Step Target</label>
+        <input id="settings-hourly-steps" class="form-input" type="number" min="100" max="5000" value="800" />
+      </div>
+      
+      <div class="form-group">
+        <label class="form-label">Export/Import Data</label>
+        <textarea id="settings-data" class="form-input" rows="4" placeholder="Paste exported data here to import..."></textarea>
+        <div class="flex" style="margin-top: 8px;">
+          <button class="btn pri small" onclick="exportData()">Export</button>
+          <button class="btn blue small" onclick="importData()">Import</button>
+        </div>
+      </div>
+      
+      <div class="flex" style="margin-top: 20px;">
+        <button class="btn" onclick="saveSettings()">Save Settings</button>
+        <button class="btn orange" onclick="closeSettings()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Hourly Log Entry Modal -->
+  <div id="hourly-log-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 id="hourly-modal-title">Log Activity</h2>
+      <form onsubmit="saveHourlyEntry(event)">
+        <div class="form-group">
+          <label class="form-label">Hour</label>
+          <input id="hourly-hour" class="form-input" type="text" readonly />
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Tasks from Task List</label>
+          <div id="hourly-task-chips">
+            <!-- Will be populated by JavaScript -->
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Additional Tasks (not in task list)</label>
+          <input id="hourly-additional-tasks" class="form-input" placeholder="e.g., emails, meetings, breaks" />
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Additional Points Earned</label>
+          <div class="stepper">
+            <button type="button" onclick="adjustHourlyPoints(-1)">−</button>
+            <span id="hourly-points">0</span>
+            <button type="button" onclick="adjustHourlyPoints(1)">+</button>
+          </div>
+          <div class="info-text" style="font-size: 12px; margin-top: 4px;">Points for activities beyond your main tasks</div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">How did you feel this hour?</label>
+          <div class="success-text" style="font-size: 12px; margin-bottom: 8px;">You can select multiple feelings</div>
+          <div id="hourly-feeling-chips">
+            <span class="chip clickable" data-feeling="energized" onclick="selectFeeling('energized')">😁 Energized</span>
+            <span class="chip clickable" data-feeling="focused" onclick="selectFeeling('focused')">🎯 Focused</span>
+            <span class="chip clickable" data-feeling="productive" onclick="selectFeeling('productive')">⚡ Productive</span>
+            <span class="chip clickable" data-feeling="neutral" onclick="selectFeeling('neutral')">😐 Neutral</span>
+            <span class="chip clickable" data-feeling="distracted" onclick="selectFeeling('distracted')">😵 Distracted</span>
+            <span class="chip clickable" data-feeling="tired" onclick="selectFeeling('tired')">😴 Tired</span>
+            <span class="chip clickable" data-feeling="stressed" onclick="selectFeeling('stressed')">😰 Stressed</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Rate this hour (1-5)</label>
+          <div id="hourly-rating-chips">
+            <span class="chip clickable" data-rating="1" onclick="selectRating(1)">1 ⭐</span>
+            <span class="chip clickable" data-rating="2" onclick="selectRating(2)">2 ⭐</span>
+            <span class="chip clickable" data-rating="3" onclick="selectRating(3)">3 ⭐</span>
+            <span class="chip clickable" data-rating="4" onclick="selectRating(4)">4 ⭐</span>
+            <span class="chip clickable" data-rating="5" onclick="selectRating(5)">5 ⭐</span>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Notes/Feedback</label>
+          <textarea id="hourly-notes" class="form-input" rows="3" placeholder="What went well? What could be improved?"></textarea>
+        </div>
+        
+        <div class="flex" style="margin-top: 20px;">
+          <button type="button" class="btn orange" onclick="closeHourlyModal()">Cancel</button>
+          <button type="submit" class="btn pri">Save Entry</button>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Daily Overview Popup -->
+  <div id="daily-overview-popup" class="modal-overlay hidden">
+    <div class="modal" style="max-height: 90vh; overflow-y: auto;">
+      <div class="flex flex-between" style="margin-bottom: 12px; align-items: center;">
+        <h2 style="margin: 0;">📊 Daily Overview</h2>
+        <button class="btn warn small" onclick="closeDailyOverviewPopup()">✕</button>
+      </div>
+      <div id="daily-overview-popup-content">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- Daily Goals Popup -->
+  <div id="daily-goals-popup" class="modal-overlay hidden">
+    <div class="modal" style="max-height: 90vh; overflow-y: auto;">
+      <div class="flex flex-between" style="margin-bottom: 12px; align-items: center;">
+        <h2 style="margin: 0;">🎯 Daily Goals</h2>
+        <button class="btn warn small" onclick="closeDailyGoalsPopup()">✕</button>
+      </div>
+      <div id="daily-goals-popup-content">
+        <div class="stats-grid">
+          <div class="stat-box">
+            <div class="stat-number" id="popup-daily-points-progress">0 / 24</div>
+            <div class="stat-label">Points</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="popup-daily-chant-progress">0 / 108</div>
+            <div class="stat-label">Chants</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number" id="popup-daily-completion-rate">0%</div>
+            <div class="stat-label">Completion</div>
+          </div>
+        </div>
+        <div id="goals-detailed-content" style="margin-top: 16px;">
+          <!-- Will be populated by JavaScript -->
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Tasks by Tag Popup -->
+  <div id="tasks-by-tag-popup" class="modal-overlay hidden">
+    <div class="modal" style="max-height: 90vh; overflow-y: auto;">
+      <div class="flex flex-between" style="margin-bottom: 12px; align-items: center;">
+        <h2 style="margin: 0;">🏷️ Tasks by Tag</h2>
+        <button class="btn warn small" onclick="closeTasksByTagPopup()">✕</button>
+      </div>
+      <div id="tasks-by-tag-popup-content">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- Task Timeline Popup -->
+  <div id="task-timeline-popup" class="modal-overlay hidden">
+    <div class="modal" style="max-height: 90vh; overflow-y: auto;">
+      <div class="flex flex-between" style="margin-bottom: 12px; align-items: center;">
+        <h2 style="margin: 0;">⏰ Task Timeline</h2>
+        <button class="btn warn small" onclick="closeTaskTimelinePopup()">✕</button>
+      </div>
+      <div id="task-timeline-popup-content">
+        <!-- Will be populated by JavaScript -->
+      </div>
+    </div>
+  </div>
+  
+  <!-- Add Task to Focus Modal -->
+  <div id="add-focus-task-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h2>Add Task to Focus Session</h2>
+      <div id="available-tasks-list" style="max-height: 300px; overflow-y: auto;">
+        <!-- Will be populated by JavaScript -->
+      </div>
+      <div class="flex" style="margin-top: 16px;">
+        <button class="btn secondary" onclick="closeAddFocusTaskModal()">Cancel</button>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Update Task Points Modal -->
+  <div id="update-points-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <h2 id="update-points-title">Update Task Progress</h2>
+      <div class="form-group">
+        <label class="form-label">Points Completed</label>
+        <div class="stepper">
+          <button type="button" onclick="adjustCompletedPoints(-1)">−1</button>
+          <button type="button" onclick="adjustCompletedPoints(-0.5)">−0.5</button>
+          <span id="completed-points">0</span>
+          <button type="button" onclick="adjustCompletedPoints(0.5)">+0.5</button>
+          <button type="button" onclick="adjustCompletedPoints(1)">+1</button>
+        </div>
+        <div class="info-text" style="font-size: 12px; margin-top: 4px;">
+          Total points for this task: <span id="total-task-points">0</span>
+        </div>
+      </div>
+      <div class="flex" style="margin-top: 16px;">
+        <button class="btn secondary" onclick="closeUpdatePointsModal()">Cancel</button>
+        <button class="btn pri" onclick="saveTaskProgress()">Save Progress</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  /* ===== Utility Functions ===== */
+  (function() {
+    window.PrismUtils = {
+      currentYearMonth() {
+        const d = new Date();
+        return {
+          y: d.getFullYear(),
+          m: d.getMonth() + 1,
+          ymStr: d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0')
+        };
+      },
+      
+      todayKey() {
+        const d = new Date();
+        return d.getFullYear() + '-' + 
+               String(d.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(d.getDate()).padStart(2, '0');
+      },
+      
+      loadMonth(kind, ymStr) {
+        try {
+          const key = `prism.${kind}.${ymStr}`;
+          const raw = localStorage.getItem(key);
+          let data = raw ? JSON.parse(raw) : this.getDefaultMonth(kind, ymStr);
+          
+          // Migrate old task format to new format
+          if (kind === 'tasks' && data.tasks && !data.days) {
+            const oldTasks = data.tasks;
+            data = { month: ymStr, days: {} };
+            
+            // Move old tasks to today's date if they exist
+            if (oldTasks.length > 0) {
+              const todayKey = this.todayKey();
+              data.days[todayKey] = { tasks: oldTasks };
+            }
+            
+            // Save migrated data
+            this.saveMonth(kind, ymStr, data);
+          }
+          
+          return data;
+        } catch (e) {
+          return this.getDefaultMonth(kind, ymStr);
+        }
+      },
+      
+      saveMonth(kind, ymStr, data) {
+        const key = `prism.${kind}.${ymStr}`;
+        localStorage.setItem(key, JSON.stringify(data));
+      },
+      
+      getDefaultMonth(kind, ymStr) {
+        switch (kind) {
+          case 'chants':
+            return { month: ymStr, days: {} };
+          case 'tasks':
+            return { month: ymStr, days: {} };
+          case 'progress':
+            return { month: ymStr, days: {} };
+          case 'hourly':
+            return { month: ymStr, days: {} };
+          case 'steps':
+            return { month: ymStr, days: {} };
+          default:
+            return {};
+        }
+      },
+      
+      ensureDay(kind, dateKey, defaults = {}) {
+        const ymStr = dateKey.substring(0, 7); // Extract YYYY-MM from YYYY-MM-DD
+        const data = this.loadMonth(kind, ymStr);
+        
+        // Ensure data.days exists
+        if (!data.days) {
+          data.days = {};
+        }
+        
+        if (kind === 'progress') {
+          if (!data.days[dateKey]) {
+            data.days[dateKey] = {
+              dailyPointsGoal: defaults.dailyPointsGoal || 24,
+              completedPoints: 0,
+              sessions: [],
+              hourBlocks: [],
+              ...defaults
+            };
+            this.saveMonth(kind, ymStr, data);
+          }
+          return data.days[dateKey];
+        } else if (kind === 'chants') {
+          if (!data.days[dateKey]) {
+            data.days[dateKey] = {
+              dailyChantGoal: defaults.dailyChantGoal || 108,
+              totalCount: 0,
+              sessions: [],
+              ...defaults
+            };
+            this.saveMonth(kind, ymStr, data);
+          }
+          return data.days[dateKey];
+        } else if (kind === 'hourly') {
+          if (!data.days[dateKey]) {
+            data.days[dateKey] = {
+              entries: {}, // hour keys 0-23, values are activity objects
+              ...defaults
+            };
+            this.saveMonth(kind, ymStr, data);
+          }
+          return data.days[dateKey];
+        } else if (kind === 'tasks') {
+          if (!data.days[dateKey]) {
+            data.days[dateKey] = {
+              tasks: [],
+              ...defaults
+            };
+            this.saveMonth(kind, ymStr, data);
+          }
+          return data.days[dateKey];
+        } else if (kind === 'steps') {
+          if (!data.days[dateKey]) {
+            data.days[dateKey] = {
+              sessions: [],
+              hourlySteps: {},
+              totalSteps: 0,
+              ...defaults
+            };
+            this.saveMonth(kind, ymStr, data);
+          }
+          return data.days[dateKey];
+        }
+      },
+      
+      nowISO() {
+        return new Date().toISOString();
+      },
+      
+      formatTime(seconds) {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+      }
+    };
+  })();
+
+  /* ===== App State ===== */
+  let currentTab = 'tasks';
+  let currentTask = null;
+  let focusTimer = null;
+  let focusStartTime = null;
+  let focusElapsed = 0;
+  let chantSession = null;
+  let nowTasks = [];
+  let nextTasks = [];
+  let laterTasks = [];
+  let finishedTasks = [];
+  let editingTaskId = null;
+  let editingHourlyHour = null;
+  let selectedHourlyTasks = [];
+  let selectedFeelings = []; // Changed from single feeling to array of feelings
+  let selectedRating = null;
+  let currentHourlyDate = null;
+  let currentSelectedDate = null; // Global selected date for all views
+  
+  // Focus Session State
+  let focusTasks = []; // Tasks in current focus session
+  let focusPhase = 'work'; // 'work', 'reflection', 'break'
+  let focusTimeRemaining = 30 * 60; // seconds
+  let focusSessionCount = 0;
+  let focusTotalTime = 0;
+  let focusIsPaused = false;
+  let editingTaskPoints = null;
+  
+  // Step Counter State
+  let stepCounterActive = false;
+  let currentStepSession = null;
+  let stepCounterTimer = null;
+  let sessionStartTime = null;
+  let sessionSteps = 0;
+  let stepCounterSensor = null;
+
+  /* ===== Navigation ===== */
+  function switchTab(tabName) {
+    currentTab = tabName;
+    
+    // Hide all tabs
+    document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.main').forEach(el => el.classList.add('hidden'));
+    
+    // Show selected tab
+    document.getElementById(`tab-${tabName}`).classList.remove('hidden');
+    
+    // Update tab bar
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    event.target.closest('.tab-btn').classList.add('active');
+    
+    // Refresh tab content
+    if (tabName === 'tasks') {
+      refreshTasks();
+    } else if (tabName === 'chant') {
+      refreshChantTab();
+    } else if (tabName === 'steps') {
+      refreshStepsTab();
+    } else if (tabName === 'hourly') {
+      refreshHourlyTab();
+    } else if (tabName === 'daily') {
+      refreshDailyTab();
+    }
+    
+    // Save last tab
+    localStorage.setItem('prism.lastTab', tabName);
+  }
+
+  /* ===== Task Management ===== */
+  function generateTaskId() {
+    return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  function getCurrentDate() {
+    return currentSelectedDate || PrismUtils.todayKey();
+  }
+
+  function loadTasks(dateKey = null) {
+    const targetDate = dateKey || getCurrentDate();
+    const ymStr = targetDate.substring(0, 7); // Extract YYYY-MM from YYYY-MM-DD
+    const dayData = PrismUtils.ensureDay('tasks', targetDate);
+    return dayData.tasks || [];
+  }
+
+  function saveTasks(tasks, dateKey = null) {
+    const targetDate = dateKey || getCurrentDate();
+    const ymStr = targetDate.substring(0, 7); // Extract YYYY-MM from YYYY-MM-DD
+    const data = PrismUtils.loadMonth('tasks', ymStr);
+    
+    if (!data.days[targetDate]) {
+      data.days[targetDate] = { tasks: [] };
+    }
+    
+    data.days[targetDate].tasks = tasks;
+    PrismUtils.saveMonth('tasks', ymStr, data);
+  }
+
+  function loadAllTasks() {
+    // Load tasks from all dates for cross-date operations
+    const { ymStr } = PrismUtils.currentYearMonth();
+    const data = PrismUtils.loadMonth('tasks', ymStr);
+    let allTasks = [];
+    
+    Object.keys(data.days || {}).forEach(dateKey => {
+      const dayTasks = data.days[dateKey].tasks || [];
+      dayTasks.forEach(task => {
+        allTasks.push({ ...task, dateKey });
+      });
+    });
+    
+    return allTasks;
+  }
+
+  function categorizeTasks() {
+    const tasks = loadTasks();
+    nowTasks = tasks.filter(t => t.bucket === 'Now' && t.status !== 'done');
+    nextTasks = tasks.filter(t => t.bucket === 'Next' && t.status !== 'done');
+    laterTasks = tasks.filter(t => t.bucket === 'Later' && t.status !== 'done');
+    finishedTasks = tasks.filter(t => t.status === 'done');
+  }
+
+  function refreshTasks() {
+    categorizeTasks();
+    updatePointsRing();
+    renderTaskLanes();
+  }
+
+  function setCurrentDate(dateKey) {
+    currentSelectedDate = dateKey;
+    currentHourlyDate = dateKey;
+    
+    // Update all date pickers to reflect the new date
+    const datePickers = ['tasks-date-picker', 'daily-date-picker', 'hourly-date-picker', 'hourly-stats-date-picker'];
+    datePickers.forEach(pickerId => {
+      const picker = document.getElementById(pickerId);
+      if (picker) picker.value = dateKey;
+    });
+    
+    // Refresh current tab
+    if (currentTab === 'tasks') {
+      refreshTasks();
+    } else if (currentTab === 'chant') {
+      refreshChantTab();
+    } else if (currentTab === 'hourly') {
+      refreshHourlyTab();
+    } else if (currentTab === 'daily') {
+      refreshDailyView();
+    }
+  }
+
+  function updatePointsRing() {
+    const dateKey = getCurrentDate();
+    const dayData = PrismUtils.ensureDay('progress', dateKey);
+    
+    const completed = dayData.completedPoints || 0;
+    const goal = dayData.dailyPointsGoal || 24;
+    const percentage = Math.min((completed / goal) * 100, 100);
+    
+    // Update SVG circle
+    const circumference = 314; // 2 * π * 50
+    const offset = circumference - (percentage / 100) * circumference;
+    document.getElementById('progress-circle').style.strokeDashoffset = offset;
+    
+    document.getElementById('points-completed').textContent = completed;
+    document.getElementById('points-goal').textContent = `/ ${goal}`;
+  }
+
+  function renderTaskLanes() {
+    renderTaskLane('now', nowTasks);
+    renderTaskLane('next', nextTasks);
+    renderTaskLane('later', laterTasks);
+    renderTaskLane('finished', finishedTasks);
+    
+    document.getElementById('now-count').textContent = `${nowTasks.length}/5`;
+    document.getElementById('next-count').textContent = nextTasks.length;
+    document.getElementById('later-count').textContent = laterTasks.length;
+    document.getElementById('finished-count').textContent = finishedTasks.length;
+    
+    // Change color if Now is at capacity
+    const nowChip = document.getElementById('now-count');
+    nowChip.className = nowTasks.length >= 5 ? 'chip warn' : 'chip';
+  }
+
+  function renderTaskLane(laneId, tasks) {
+    const container = document.getElementById(`${laneId}-tasks`);
+    if (!container) return;
+    
+    if (tasks.length === 0) {
+      container.innerHTML = '<div class="warning-text" style="padding: 12px; text-align: center;">No tasks</div>';
+      return;
+    }
+    
+    container.innerHTML = tasks.map(task => {
+      const isFinished = laneId === 'finished';
+      const taskClass = isFinished ? 'task-item finished-task' : 'task-item';
+      const onClickAction = isFinished ? `editTask('${task.id}')` : `selectTaskForAction('${task.id}')`;
+      
+      return `
+        <div class="${taskClass}" onclick="${onClickAction}" tabindex="0" onkeydown="handleTaskKeydown(event, '${task.id}')" data-task-id="${task.id}">
+        <div class="task-points">${task.points}</div>
+        <div class="task-content">
+          <div class="task-title">${task.title}</div>
+          <div class="task-meta">
+            <span class="chip">${task.priority_tag}</span>
+            <span class="chip">${task.energy}</span>
+            ${task.due ? `<span class="chip">Due ${task.due}</span>` : ''}
+            ${isFinished && task.completedAt ? `<span class="chip">✓ ${new Date(task.completedAt).toLocaleDateString()}</span>` : ''}
+            ${!isFinished ? `<span class="chip" style="background: var(--pri); color: white;">${(task.completedPoints || 0)}/${task.points} pts</span>` : ''}
+          </div>
+          ${!isFinished && task.status !== 'done' ? `
+            <div class="progress-bar" style="margin-top: 4px;">
+              <div class="progress-fill" style="width: ${Math.min(((task.completedPoints || 0) / task.points) * 100, 100)}%"></div>
+        </div>
+          ` : ''}
+      </div>
+        ${!isFinished && task.status !== 'done' ? `
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-left: 8px;">
+            <button class="btn info small" onclick="event.stopPropagation(); updateTaskProgress('${task.id}')" style="padding: 2px 6px; font-size: 10px;">+Pts</button>
+          </div>
+        ` : ''}
+      </div>
+      `;
+    }).join('');
+  }
+
+  function toggleOtherLanes() {
+    const otherLanes = document.getElementById('other-lanes');
+    const toggleBtn = document.getElementById('toggle-lanes');
+    
+    if (otherLanes.classList.contains('hidden')) {
+      otherLanes.classList.remove('hidden');
+      toggleBtn.textContent = 'Hide Next, Later & Finished';
+    } else {
+      otherLanes.classList.add('hidden');
+      toggleBtn.textContent = 'Show Next, Later & Finished';
+    }
+  }
+
+  function selectTaskForAction(taskId) {
+    // For non-finished tasks, clicking selects for editing
+    editTask(taskId);
+  }
+
+  function handleTaskKeydown(event, taskId) {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      finishTask(taskId);
+    }
+  }
+
+  function finishTask(taskId) {
+    const tasks = loadTasks();
+    const taskIndex = tasks.findIndex(t => t.id === taskId);
+    if (taskIndex === -1) return;
+    
+    const task = tasks[taskIndex];
+    if (task.status === 'done') return; // Already finished
+    
+    // Mark task as done
+    tasks[taskIndex].status = 'done';
+    tasks[taskIndex].completedAt = PrismUtils.nowISO();
+    saveTasks(tasks);
+    
+    // Add points to current date's progress
+    const dateKey = getCurrentDate();
+    const dayData = PrismUtils.ensureDay('progress', dateKey);
+    dayData.completedPoints = (dayData.completedPoints || 0) + task.points;
+    
+    // Log completion
+    dayData.sessions.push({
+      taskId: task.id,
+      completedAt: PrismUtils.nowISO(),
+      pointsEarned: task.points,
+      method: 'keyboard'
+    });
+    
+    const ymStr = dateKey.substring(0, 7);
+    const progressData = PrismUtils.loadMonth('progress', ymStr);
+    progressData.days[dateKey] = dayData;
+    PrismUtils.saveMonth('progress', ymStr, progressData);
+    
+    showToast(`Task completed! +${task.points} points`);
+    refreshTasks();
+  }
+
+  /* ===== Task Modal ===== */
+  function openTaskModal() {
+    editingTaskId = null;
+    document.getElementById('modal-title').textContent = 'Add Task';
+    resetTaskModal();
+    document.getElementById('task-modal').classList.remove('hidden');
+  }
+
+  function editTask(taskId) {
+    const tasks = loadTasks();
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    editingTaskId = taskId;
+    document.getElementById('modal-title').textContent = 'Edit Task';
+    
+    document.getElementById('task-title').value = task.title;
+    document.getElementById('task-points-input').value = task.points;
+    document.getElementById('task-completed-points-input').value = task.completedPoints || 0;
+    document.getElementById('task-due').value = task.due || '';
+    
+    selectPriority(task.priority_tag);
+    selectEnergy(task.energy);
+    selectBucket(task.bucket);
+    
+    // Show finish button only for non-finished tasks
+    const finishBtn = document.getElementById('finish-task-btn');
+    if (task.status !== 'done') {
+      finishBtn.style.display = 'block';
+    } else {
+      finishBtn.style.display = 'none';
+    }
+    
+    document.getElementById('task-modal').classList.remove('hidden');
+  }
+
+  function resetTaskModal() {
+    document.getElementById('task-title').value = '';
+    document.getElementById('task-points-input').value = '1';
+    document.getElementById('task-completed-points-input').value = '0';
+    document.getElementById('task-due').value = '';
+    
+    selectPriority('Do');
+    selectEnergy('med');
+    selectBucket('Now');
+    
+    // Hide finish button for new tasks
+    document.getElementById('finish-task-btn').style.display = 'none';
+  }
+
+  function closeTaskModal() {
+    document.getElementById('task-modal').classList.add('hidden');
+  }
+
+  function finishTaskFromModal() {
+    if (!editingTaskId) return;
+    
+    closeTaskModal();
+    finishTask(editingTaskId);
+  }
+
+  function adjustPoints(delta) {
+    const inputEl = document.getElementById('task-points-input');
+    let points = parseFloat(inputEl.value) + delta;
+    points = Math.max(0.1, Math.min(points, 50));
+    // Round to 1 decimal place
+    points = Math.round(points * 10) / 10;
+    inputEl.value = points;
+    
+    // Update completed points limit
+    updateCompletedPointsLimit(points);
+  }
+
+  function adjustCompletedTaskPoints(delta) {
+    const inputEl = document.getElementById('task-completed-points-input');
+    const plannedPoints = parseFloat(document.getElementById('task-points-input').value);
+    let points = parseFloat(inputEl.value) + delta;
+    points = Math.max(0, Math.min(points, plannedPoints));
+    // Round to 1 decimal place
+    points = Math.round(points * 10) / 10;
+    inputEl.value = points;
+  }
+
+  function updatePointsFromInput() {
+    const input = document.getElementById('task-points-input');
+    let points = parseFloat(input.value);
+    
+    if (isNaN(points) || points < 0.1) {
+      points = 0.1;
+    } else if (points > 50) {
+      points = 50;
+    }
+    
+    // Round to 1 decimal place
+    points = Math.round(points * 10) / 10;
+    input.value = points;
+    
+    // Update completed points limit
+    updateCompletedPointsLimit(points);
+  }
+  
+  function updateCompletedPointsLimit(plannedPoints) {
+    const completedInput = document.getElementById('task-completed-points-input');
+    const currentCompleted = parseFloat(completedInput.value);
+    if (currentCompleted > plannedPoints) {
+      completedInput.value = plannedPoints;
+    }
+    completedInput.max = plannedPoints;
+  }
+
+  function updateCompletedPointsFromInput() {
+    const input = document.getElementById('task-completed-points-input');
+    const plannedPoints = parseFloat(document.getElementById('task-points-input').value);
+    let points = parseFloat(input.value);
+    
+    if (isNaN(points) || points < 0) {
+      points = 0;
+    } else if (points > plannedPoints) {
+      points = plannedPoints;
+    }
+    
+    // Round to 1 decimal place
+    points = Math.round(points * 10) / 10;
+    input.value = points;
+  }
+  
+  function adjustHourlyPoints(delta) {
+    const pointsEl = document.getElementById('hourly-points');
+    let points = parseInt(pointsEl.textContent) + delta;
+    points = Math.max(0, Math.min(points, 20)); // Allow 0-20 points per hour
+    pointsEl.textContent = points;
+  }
+
+  function selectPriority(priority) {
+    document.querySelectorAll('[data-priority]').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[data-priority="${priority}"]`).classList.add('active');
+  }
+
+  function selectEnergy(energy) {
+    document.querySelectorAll('[data-energy]').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[data-energy="${energy}"]`).classList.add('active');
+  }
+
+  function selectBucket(bucket) {
+    document.querySelectorAll('[data-bucket]').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[data-bucket="${bucket}"]`).classList.add('active');
+  }
+
+  function parseQuickAdd(title) {
+    // Parse "2pt Task name" format
+    const match = title.match(/^(\d+)pt\s+(.+)$/i);
+    if (match) {
+      return {
+        points: parseInt(match[1]),
+        title: match[2]
+      };
+    }
+    return { points: 1, title };
+  }
+
+  function saveTask(event) {
+    event.preventDefault();
+    
+    const titleInput = document.getElementById('task-title').value.trim();
+    if (!titleInput) return;
+    
+    const { points, title } = parseQuickAdd(titleInput);
+    
+    // Check WIP limit for Now bucket
+    const bucket = document.querySelector('[data-bucket].active').dataset.bucket;
+    if (bucket === 'Now' && !editingTaskId) {
+      if (nowTasks.length >= 5) {
+        showToast('Cannot add more than 5 tasks to Now. Move some to Next or Later first.');
+        return;
+      }
+    }
+    
+    const task = {
+      id: editingTaskId || generateTaskId(),
+      title,
+      points: parseFloat(document.getElementById('task-points-input').value),
+      completedPoints: parseFloat(document.getElementById('task-completed-points-input').value),
+      bucket,
+      priority_tag: document.querySelector('[data-priority].active').dataset.priority,
+      energy: document.querySelector('[data-energy].active').dataset.energy,
+      status: 'todo',
+      due: document.getElementById('task-due').value || null,
+      createdAt: editingTaskId ? undefined : PrismUtils.nowISO(),
+      updatedAt: PrismUtils.nowISO()
+    };
+    
+    const tasks = loadTasks();
+    if (editingTaskId) {
+      const index = tasks.findIndex(t => t.id === editingTaskId);
+      if (index !== -1) {
+        tasks[index] = { ...tasks[index], ...task };
+      }
+    } else {
+      tasks.push(task);
+    }
+    
+    saveTasks(tasks);
+    closeTaskModal();
+    refreshTasks();
+  }
+
+  /* ===== Focus Mode ===== */
+  function startFocus() {
+    categorizeTasks();
+    
+    // Initialize focus session with available tasks
+    focusTasks = [...nowTasks];
+    
+    if (focusTasks.length === 0) {
+      // Auto-suggest from Next/Later
+      const suggestions = suggestTasks();
+      if (suggestions.length === 0) {
+        showToast('No tasks available. Add some tasks first!');
+        return;
+      }
+      
+      // Add top suggestions to focus session
+      focusTasks = suggestions.slice(0, 3);
+    }
+    
+    // Initialize timer settings
+    const settings = getTimerSettings();
+    focusPhase = 'work';
+    focusTimeRemaining = settings.workDuration * 60;
+    focusSessionCount = 0;
+    focusTotalTime = 0;
+    focusIsPaused = false;
+    
+    showFocusScreen();
+  }
+
+  function applySessionTimers() {
+    const workDuration = parseInt(document.getElementById('session-work-duration').value);
+    const reflectionDuration = parseInt(document.getElementById('session-reflection-duration').value);
+    const breakDuration = parseInt(document.getElementById('session-break-duration').value);
+    
+    // Validate inputs
+    if (workDuration < 1 || workDuration > 120) {
+      showToast('Work duration must be between 1-120 minutes');
+      return;
+    }
+    if (reflectionDuration < 1 || reflectionDuration > 30) {
+      showToast('Reflection duration must be between 1-30 minutes');
+      return;
+    }
+    if (breakDuration < 1 || breakDuration > 60) {
+      showToast('Break duration must be between 1-60 minutes');
+      return;
+    }
+    
+    // Update current session timers
+    if (focusPhase === 'work') {
+      focusTimeRemaining = workDuration * 60;
+    } else if (focusPhase === 'reflection') {
+      focusTimeRemaining = reflectionDuration * 60;
+    } else if (focusPhase === 'break') {
+      focusTimeRemaining = breakDuration * 60;
+    }
+    
+    updateFocusDisplay();
+    showToast('Session timers updated!');
+  }
+
+  function suggestTasks() {
+    const allTasks = [...nextTasks, ...laterTasks];
+    
+    // Calculate score for each task
+    return allTasks.map(task => {
+      let importance = 0, urgency = 0;
+      
+      switch (task.priority_tag) {
+        case 'Do': importance = 2; urgency = 2; break;
+        case 'Plan': importance = 2; urgency = 0; break;
+        case 'Delegate': importance = 0; urgency = 2; break;
+        case 'Drop': importance = 0; urgency = 0; break;
+      }
+      
+      const dueSoon = task.due ? 1 : 0;
+      const energyMatch = 1; // Could match current time/energy
+      const smallBites = task.points <= 2 ? 1 : 0;
+      const staleness = 0; // Could calculate based on createdAt
+      
+      const score = (2 * importance + urgency) + dueSoon + energyMatch + smallBites - staleness;
+      
+      return { ...task, score };
+    }).sort((a, b) => b.score - a.score);
+  }
+
+  function getTimerSettings() {
+    const settings = JSON.parse(localStorage.getItem('prism.settings') || '{}');
+    return {
+      workDuration: settings.workDuration || 30,
+      reflectionDuration: settings.reflectionDuration || 5,
+      breakDuration: settings.breakDuration || 10
+    };
+  }
+
+  function showFocusScreen() {
+    document.getElementById('tab-tasks').classList.add('hidden');
+    document.getElementById('focus-screen').classList.remove('hidden');
+    
+    // Initialize session timer controls with current settings
+    const settings = getTimerSettings();
+    document.getElementById('session-work-duration').value = settings.workDuration;
+    document.getElementById('session-reflection-duration').value = settings.reflectionDuration;
+    document.getElementById('session-break-duration').value = settings.breakDuration;
+    
+    updateFocusDisplay();
+  }
+
+  function exitFocus() {
+    stopFocusTimer();
+    
+    // Save any progress made during the session
+    saveFocusSessionProgress();
+    
+    document.getElementById('focus-screen').classList.add('hidden');
+    document.getElementById('tab-tasks').classList.remove('hidden');
+    refreshTasks();
+  }
+
+  function updateFocusDisplay() {
+    // Update timer display
+    const minutes = Math.floor(focusTimeRemaining / 60);
+    const seconds = focusTimeRemaining % 60;
+    document.getElementById('focus-timer').textContent = 
+      `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Update phase display
+    const phaseNames = {
+      'work': 'Work Session',
+      'reflection': 'Reflection Time',
+      'break': 'Break Time'
+    };
+    document.getElementById('session-phase').textContent = phaseNames[focusPhase];
+    
+    // Update tasks list
+    renderFocusTasksList();
+    
+    // Update session stats
+    document.getElementById('session-stats').textContent = 
+      `Sessions completed: ${focusSessionCount} | Total focus time: ${Math.floor(focusTotalTime / 60)} min`;
+  }
+
+  function renderFocusTasksList() {
+    const container = document.getElementById('focus-tasks-list');
+    
+    if (focusTasks.length === 0) {
+      container.innerHTML = '<div class="info-text">No tasks in focus session. Add some tasks to get started!</div>';
+      return;
+    }
+    
+    container.innerHTML = focusTasks.map(task => {
+      const completedPoints = task.completedPoints || 0;
+      const progress = Math.min((completedPoints / task.points) * 100, 100);
+      
+      return `
+        <div class="task-item" style="margin-bottom: 8px;">
+          <div class="task-content" style="flex: 1;">
+            <div class="task-title">${task.title}</div>
+            <div class="task-meta">
+              <span class="chip">${task.priority_tag}</span>
+              <span class="chip">${task.energy}</span>
+              <span class="chip">${completedPoints}/${task.points} pts</span>
+            </div>
+            <div class="progress-bar" style="margin-top: 4px;">
+              <div class="progress-fill" style="width: ${progress}%"></div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 4px;">
+            <button class="btn info small" onclick="updateTaskPoints('${task.id}')">+Pts</button>
+            ${completedPoints >= task.points ? 
+              '<span class="chip" style="background: var(--pri); color: white;">✓ Done</span>' : 
+              ''}
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function toggleFocusTimer() {
+    if (focusTimer) {
+      pauseFocusTimer();
+    } else {
+      startFocusTimer();
+    }
+  }
+
+  function startFocusTimer() {
+    if (focusIsPaused) {
+      // Resume from pause
+      focusIsPaused = false;
+    } else {
+      // Start new phase
+    focusStartTime = Date.now();
+    }
+    
+    focusTimer = setInterval(() => {
+      focusTimeRemaining--;
+      updateFocusDisplay();
+      
+      if (focusTimeRemaining <= 0) {
+        completePhase();
+      }
+    }, 1000);
+    
+    document.getElementById('focus-start-btn').style.display = 'none';
+    document.getElementById('focus-pause-btn').style.display = 'block';
+    document.getElementById('focus-skip-btn').style.display = 'block';
+  }
+
+  function pauseFocusTimer() {
+    if (focusTimer) {
+      clearInterval(focusTimer);
+      focusTimer = null;
+      focusIsPaused = true;
+    }
+    
+    document.getElementById('focus-start-btn').style.display = 'block';
+    document.getElementById('focus-pause-btn').style.display = 'none';
+    document.getElementById('focus-skip-btn').style.display = 'none';
+    
+    document.getElementById('focus-start-btn').textContent = 'Resume';
+  }
+
+  function stopFocusTimer() {
+    if (focusTimer) {
+      clearInterval(focusTimer);
+      focusTimer = null;
+    }
+    focusIsPaused = false;
+    
+    document.getElementById('focus-start-btn').style.display = 'block';
+    document.getElementById('focus-pause-btn').style.display = 'none';
+    document.getElementById('focus-skip-btn').style.display = 'none';
+    document.getElementById('focus-start-btn').textContent = 'Start Session';
+  }
+
+  function completePhase() {
+    stopFocusTimer();
+    
+    // Use session-specific timer values
+    const workDuration = parseInt(document.getElementById('session-work-duration').value);
+    const reflectionDuration = parseInt(document.getElementById('session-reflection-duration').value);
+    const breakDuration = parseInt(document.getElementById('session-break-duration').value);
+    
+    if (focusPhase === 'work') {
+      focusSessionCount++;
+      focusTotalTime += workDuration * 60;
+      
+      showToast('Work session complete! Time for reflection.');
+      focusPhase = 'reflection';
+      focusTimeRemaining = reflectionDuration * 60;
+    } else if (focusPhase === 'reflection') {
+      showToast('Reflection complete! Time for a break.');
+      focusPhase = 'break';
+      focusTimeRemaining = breakDuration * 60;
+    } else if (focusPhase === 'break') {
+      showToast('Break complete! Ready for another work session?');
+      focusPhase = 'work';
+      focusTimeRemaining = workDuration * 60;
+    }
+    
+    updateFocusDisplay();
+    document.getElementById('focus-start-btn').textContent = 'Start ' + 
+      (focusPhase === 'work' ? 'Session' : focusPhase.charAt(0).toUpperCase() + focusPhase.slice(1));
+  }
+
+  function skipPhase() {
+    focusTimeRemaining = 0;
+    completePhase();
+  }
+
+  function saveFocusSessionProgress() {
+    if (focusSessionCount > 0) {
+      const dateKey = getCurrentDate();
+      const dayData = PrismUtils.ensureDay('progress', dateKey);
+      
+      // Log focus session
+    dayData.sessions.push({
+        type: 'focus_session',
+      startedAt: new Date(focusStartTime).toISOString(),
+      endedAt: PrismUtils.nowISO(),
+        sessionsCompleted: focusSessionCount,
+        totalFocusTime: focusTotalTime,
+        tasksWorkedOn: focusTasks.length
+    });
+    
+      const ymStr = dateKey.substring(0, 7);
+    const progressData = PrismUtils.loadMonth('progress', ymStr);
+      progressData.days[dateKey] = dayData;
+    PrismUtils.saveMonth('progress', ymStr, progressData);
+    }
+  }
+
+  function addTaskToFocus() {
+    const tasks = loadTasks();
+    const availableTasks = tasks.filter(task => 
+      task.status !== 'done' && !focusTasks.find(ft => ft.id === task.id)
+    );
+    
+    if (availableTasks.length === 0) {
+      showToast('No available tasks to add!');
+      return;
+    }
+    
+    const container = document.getElementById('available-tasks-list');
+    container.innerHTML = availableTasks.map(task => `
+      <div class="task-item" onclick="selectTaskForFocus('${task.id}')" style="cursor: pointer; margin-bottom: 8px;">
+        <div class="task-content">
+          <div class="task-title">${task.title}</div>
+          <div class="task-meta">
+            <span class="chip">${task.points}pt</span>
+            <span class="chip">${task.priority_tag}</span>
+            <span class="chip">${task.energy}</span>
+          </div>
+        </div>
+      </div>
+    `).join('');
+    
+    document.getElementById('add-focus-task-modal').classList.remove('hidden');
+  }
+
+  function selectTaskForFocus(taskId) {
+    const tasks = loadTasks();
+    const task = tasks.find(t => t.id === taskId);
+    
+    if (task) {
+      // Initialize completed points if not set
+      task.completedPoints = task.completedPoints || 0;
+      focusTasks.push(task);
+      updateFocusDisplay();
+      showToast(`Added "${task.title}" to focus session`);
+    }
+    
+    closeAddFocusTaskModal();
+  }
+
+  function closeAddFocusTaskModal() {
+    document.getElementById('add-focus-task-modal').classList.add('hidden');
+  }
+
+  function updateTaskPoints(taskId) {
+    const task = focusTasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    editingTaskPoints = task;
+    document.getElementById('update-points-title').textContent = `Update Progress: ${task.title}`;
+    document.getElementById('completed-points').textContent = task.completedPoints || 0;
+    document.getElementById('total-task-points').textContent = task.points;
+    
+    document.getElementById('update-points-modal').classList.remove('hidden');
+  }
+
+  function adjustCompletedPoints(delta) {
+    if (!editingTaskPoints) return;
+    
+    const current = parseInt(document.getElementById('completed-points').textContent);
+    const newValue = Math.max(0, Math.min(editingTaskPoints.points, current + delta));
+    document.getElementById('completed-points').textContent = newValue;
+  }
+
+  function saveTaskPoints() {
+    if (!editingTaskPoints) return;
+    
+    const completedPoints = parseInt(document.getElementById('completed-points').textContent);
+    editingTaskPoints.completedPoints = completedPoints;
+    
+    // Update the task in the main tasks list
+    const tasks = loadTasks();
+    const taskIndex = tasks.findIndex(t => t.id === editingTaskPoints.id);
+    if (taskIndex !== -1) {
+      tasks[taskIndex].completedPoints = completedPoints;
+      
+      // Check if task should be marked as done
+      if (completedPoints >= editingTaskPoints.points) {
+      tasks[taskIndex].status = 'done';
+        
+        // Add points to progress
+        const dateKey = getCurrentDate();
+        const dayData = PrismUtils.ensureDay('progress', dateKey);
+        dayData.completedPoints = (dayData.completedPoints || 0) + editingTaskPoints.points;
+        
+        // Log task completion
+        dayData.sessions.push({
+          type: 'task_completion',
+          taskId: editingTaskPoints.id,
+          completedAt: PrismUtils.nowISO(),
+          pointsEarned: editingTaskPoints.points
+        });
+        
+        const ymStr = dateKey.substring(0, 7);
+        const progressData = PrismUtils.loadMonth('progress', ymStr);
+        progressData.days[dateKey] = dayData;
+        PrismUtils.saveMonth('progress', ymStr, progressData);
+        
+        showToast(`Task completed! +${editingTaskPoints.points} points`);
+        
+        // Remove from focus tasks
+        const focusIndex = focusTasks.findIndex(t => t.id === editingTaskPoints.id);
+        if (focusIndex !== -1) {
+          focusTasks.splice(focusIndex, 1);
+        }
+      }
+      
+      saveTasks(tasks);
+    }
+    
+    updateFocusDisplay();
+    closeUpdatePointsModal();
+  }
+
+  function closeUpdatePointsModal() {
+    document.getElementById('update-points-modal').classList.add('hidden');
+    editingTaskPoints = null;
+  }
+
+  /* ===== Task Progress Management ===== */
+  function updateTaskProgress(taskId) {
+    const tasks = loadTasks();
+    const task = tasks.find(t => t.id === taskId);
+    if (!task) return;
+    
+    editingTaskPoints = task;
+    document.getElementById('update-points-title').textContent = `Update Progress: ${task.title}`;
+    document.getElementById('completed-points').textContent = task.completedPoints || 0;
+    document.getElementById('total-task-points').textContent = task.points;
+    
+    document.getElementById('update-points-modal').classList.remove('hidden');
+  }
+
+  function adjustCompletedPoints(delta) {
+    if (!editingTaskPoints) return;
+    
+    const current = parseFloat(document.getElementById('completed-points').textContent);
+    let newValue = current + delta;
+    newValue = Math.max(0, Math.min(editingTaskPoints.points, newValue));
+    // Round to 1 decimal place
+    newValue = Math.round(newValue * 10) / 10;
+    document.getElementById('completed-points').textContent = newValue;
+  }
+
+  function saveTaskProgress() {
+    if (!editingTaskPoints) return;
+    
+    const completedPoints = parseFloat(document.getElementById('completed-points').textContent);
+    
+    // Update the task
+    const tasks = loadTasks();
+    const taskIndex = tasks.findIndex(t => t.id === editingTaskPoints.id);
+    if (taskIndex !== -1) {
+      tasks[taskIndex].completedPoints = completedPoints;
+      
+      // Check if task should be marked as done
+      if (completedPoints >= editingTaskPoints.points) {
+        tasks[taskIndex].status = 'done';
+        tasks[taskIndex].bucket = 'finished';
+        tasks[taskIndex].completedAt = PrismUtils.nowISO();
+        
+        // Add points to progress
+        const dateKey = getCurrentDate();
+        const dayData = PrismUtils.ensureDay('progress', dateKey);
+        dayData.completedPoints = (dayData.completedPoints || 0) + editingTaskPoints.points;
+        
+        // Log task completion
+    dayData.sessions.push({
+          type: 'task_completion',
+          taskId: editingTaskPoints.id,
+          completedAt: PrismUtils.nowISO(),
+          pointsEarned: editingTaskPoints.points
+        });
+        
+        const ymStr = dateKey.substring(0, 7);
+    const progressData = PrismUtils.loadMonth('progress', ymStr);
+        progressData.days[dateKey] = dayData;
+    PrismUtils.saveMonth('progress', ymStr, progressData);
+    
+        showToast(`Task completed! +${editingTaskPoints.points} points`);
+      } else {
+        showToast(`Progress updated: ${completedPoints}/${editingTaskPoints.points} points`);
+      }
+      
+      saveTasks(tasks);
+    }
+    
+    refreshTasks();
+    closeUpdatePointsModal();
+  }
+
+  /* ===== Step Counter Functions ===== */
+  function refreshStepsTab() {
+    updateStepDisplay();
+    loadRecentStepSessions();
+  }
+
+  function getStepSettings() {
+    const settings = JSON.parse(localStorage.getItem('prism.settings') || '{}');
+    return {
+      dailyGoal: settings.dailyStepsGoal || 10000,
+      hourlyTarget: settings.hourlyStepsTarget || 800
+    };
+  }
+
+  function startWalkingSession() {
+    if (stepCounterActive) return;
+    
+    stepCounterActive = true;
+    sessionStartTime = Date.now();
+    sessionSteps = 0;
+    
+    // Create session object
+    currentStepSession = {
+      id: 'session_' + Date.now(),
+      startTime: sessionStartTime,
+      startHour: new Date().getHours(),
+      steps: 0,
+      dateKey: getCurrentDate()
+    };
+    
+    // Update UI
+    document.getElementById('step-session-status').textContent = 'Active';
+    document.getElementById('step-session-status').style.background = '#10b981';
+    document.getElementById('start-walking-btn').classList.add('hidden');
+    document.getElementById('stop-walking-btn').classList.remove('hidden');
+    
+    // Start step detection
+    initStepDetection();
+    
+    // Start timer
+    stepCounterTimer = setInterval(updateSessionTimer, 1000);
+    
+    showToast('Walking session started! 🚶');
+  }
+
+  function stopWalkingSession() {
+    if (!stepCounterActive) return;
+    
+    stepCounterActive = false;
+    const endTime = Date.now();
+    const endHour = new Date().getHours();
+    
+    // Complete session object
+    currentStepSession.endTime = endTime;
+    currentStepSession.endHour = endHour;
+    currentStepSession.steps = sessionSteps;
+    currentStepSession.duration = Math.floor((endTime - sessionStartTime) / 1000);
+    
+    // Save session
+    saveStepSession(currentStepSession);
+    
+    // Distribute steps across hours
+    distributeStepsAcrossHours(currentStepSession);
+    
+    // Update UI
+    document.getElementById('step-session-status').textContent = 'Inactive';
+    document.getElementById('step-session-status').style.background = '#64748b';
+    document.getElementById('start-walking-btn').classList.remove('hidden');
+    document.getElementById('stop-walking-btn').classList.add('hidden');
+    
+    // Stop detection and timer
+    stopStepDetection();
+    if (stepCounterTimer) {
+      clearInterval(stepCounterTimer);
+      stepCounterTimer = null;
+    }
+    
+    // Reset display
+    document.getElementById('current-steps').textContent = '0';
+    document.getElementById('session-timer').textContent = '00:00:00';
+    
+    showToast(`Walking session completed! ${sessionSteps} steps recorded 👟`);
+    
+    // Refresh displays
+    updateStepDisplay();
+    loadRecentStepSessions();
+    
+    // Reset session
+    currentStepSession = null;
+    sessionSteps = 0;
+  }
+
+  function initStepDetection() {
+    // Request device motion permission for iOS
+    if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+      DeviceMotionEvent.requestPermission()
+        .then(response => {
+          if (response === 'granted') {
+            startMotionDetection();
+    } else {
+            showToast('Motion permission denied. Using manual step counting.');
+            startManualStepCounting();
+          }
+        })
+        .catch(() => {
+          startManualStepCounting();
+        });
+    } else {
+      // For Android and other devices
+      startMotionDetection();
+    }
+  }
+
+function startMotionDetection() {
+    // --- START: Pedometer Accuracy Improvements ---
+
+    // Constants for the step detection algorithm.
+    const SENSITIVITY = 0.6;       // Acceleration magnitude threshold to detect a potential peak.
+    const HIGH_PASS_ALPHA = 0.8;    // Filter coefficient to remove the constant force of gravity.
+    const MIN_STEP_INTERVAL = 250;  // 250ms = Max 4 steps/sec (240 steps per minute).
+    const MAX_STEP_INTERVAL = 2000; // 2000ms = Min 0.5 steps/sec (30 steps per minute).
+
+    // State variables that reset for each walking session.
+    let gravity = [0, 0, 0];      // Stores the filtered gravity component.
+    let lastMagnitude = 0;        // Stores the last computed acceleration magnitude.
+    let peakDetected = false;      // Tracks if we are on the upward slope of a potential step.
+    let lastStepTime = 0;          // Timestamp of the last valid step.
+
+    stepCounterSensor = (event) => {
+      if (!stepCounterActive) return;
+
+      const acceleration = event.accelerationIncludingGravity;
+      if (!acceleration || !acceleration.x) return;
+
+      // 1. Apply a High-Pass Filter to isolate movement from gravity.
+      // This estimates the gravity vector and subtracts it from the raw sensor data,
+      // leaving only the "linear acceleration" caused by the user's movement.
+      gravity[0] = HIGH_PASS_ALPHA * gravity[0] + (1 - HIGH_PASS_ALPHA) * acceleration.x;
+      gravity[1] = HIGH_PASS_ALPHA * gravity[1] + (1 - HIGH_PASS_ALPHA) * acceleration.y;
+      gravity[2] = HIGH_PASS_ALPHA * gravity[2] + (1 - HIGH_PASS_ALPHA) * acceleration.z;
+
+      const linearAccel = {
+        x: acceleration.x - gravity[0],
+        y: acceleration.y - gravity[1],
+        z: acceleration.z - gravity[2]
+      };
+
+      // 2. Calculate the magnitude of the linear acceleration vector.
+      const currentMagnitude = Math.sqrt(linearAccel.x ** 2 + linearAccel.y ** 2 + linearAccel.z ** 2);
+
+      // 3. Implement Peak Detection Logic.
+      // A step is counted when the acceleration magnitude forms a peak. We detect this by:
+      // a) Waiting for the magnitude to rise above our SENSITIVITY threshold (peakDetected = true).
+      // b) Then, waiting for it to fall below the previous magnitude (we've passed the peak).
+      const now = Date.now();
+      if (peakDetected && currentMagnitude < lastMagnitude) {
+        // A peak has just occurred. Now, validate it.
+        const timeSinceLastStep = now - lastStepTime;
+
+        // 4. Apply Time Thresholds to filter out false positives.
+        // The time between steps must be within a reasonable range for walking/running.
+        if (timeSinceLastStep > MIN_STEP_INTERVAL && timeSinceLastStep < MAX_STEP_INTERVAL) {
+          recordStep();
+          lastStepTime = now;
+        }
+        peakDetected = false; // Reset for the next peak.
+      }
+
+      // If magnitude is rising and passes the sensitivity threshold, we may be approaching a peak.
+      if (currentMagnitude > lastMagnitude && currentMagnitude > SENSITIVITY) {
+        peakDetected = true;
+      }
+
+      // Store the current magnitude for the next comparison.
+      lastMagnitude = currentMagnitude;
+    };
+
+    // --- END: Pedometer Accuracy Improvements ---
+
+    window.addEventListener('devicemotion', stepCounterSensor);
+  }
+
+  function startManualStepCounting() {
+    // Add manual step counting button for devices without motion sensors
+    const manualBtn = document.createElement('button');
+    manualBtn.className = 'btn info small';
+    manualBtn.textContent = '👟 +1 Step';
+    manualBtn.onclick = recordStep;
+    manualBtn.id = 'manual-step-btn';
+    
+    const sessionCard = document.querySelector('#tab-steps .card');
+    sessionCard.appendChild(manualBtn);
+  }
+
+  function stopStepDetection() {
+    if (stepCounterSensor) {
+      window.removeEventListener('devicemotion', stepCounterSensor);
+      stepCounterSensor = null;
+    }
+    
+    // Remove manual button if it exists
+    const manualBtn = document.getElementById('manual-step-btn');
+    if (manualBtn) {
+      manualBtn.remove();
+    }
+  }
+
+  function recordStep() {
+    if (!stepCounterActive) return;
+    
+    sessionSteps++;
+    document.getElementById('current-steps').textContent = sessionSteps;
+    
+    // Update session object
+    if (currentStepSession) {
+      currentStepSession.steps = sessionSteps;
+    }
+  }
+
+  function updateSessionTimer() {
+    if (!stepCounterActive || !sessionStartTime) return;
+    
+    const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+    const hours = Math.floor(elapsed / 3600);
+    const minutes = Math.floor((elapsed % 3600) / 60);
+    const seconds = elapsed % 60;
+    
+    const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    document.getElementById('session-timer').textContent = timeStr;
+  }
+
+  function saveStepSession(session) {
+    const dateKey = session.dateKey;
+    const ymStr = dateKey.substring(0, 7);
+    
+    // Load or create step data for the month
+    let stepData = PrismUtils.loadMonth('steps', ymStr);
+    if (!stepData.days) {
+      stepData = { month: ymStr, days: {} };
+    }
+    
+    // Ensure day exists
+    if (!stepData.days[dateKey]) {
+      stepData.days[dateKey] = {
+        sessions: [],
+        hourlySteps: {},
+        totalSteps: 0
+      };
+    }
+    
+    // Add session
+    stepData.days[dateKey].sessions.push(session);
+    
+    // Save
+    PrismUtils.saveMonth('steps', ymStr, stepData);
+  }
+
+  function distributeStepsAcrossHours(session) {
+    const { startTime, endTime, steps, dateKey } = session;
+    const startHour = new Date(startTime).getHours();
+    const endHour = new Date(endTime).getHours();
+    
+    const ymStr = dateKey.substring(0, 7);
+    let stepData = PrismUtils.loadMonth('steps', ymStr);
+    
+    if (startHour === endHour) {
+      // Same hour - all steps go to that hour
+      if (!stepData.days[dateKey].hourlySteps[startHour]) {
+        stepData.days[dateKey].hourlySteps[startHour] = 0;
+      }
+      stepData.days[dateKey].hourlySteps[startHour] += steps;
+    } else {
+      // Multiple hours - distribute proportionally
+      const totalDuration = endTime - startTime;
+      
+      for (let hour = startHour; hour <= endHour; hour++) {
+        const hourStart = Math.max(startTime, new Date(startTime).setHours(hour, 0, 0, 0));
+        const hourEnd = Math.min(endTime, new Date(startTime).setHours(hour, 59, 59, 999));
+        const hourDuration = hourEnd - hourStart;
+        const hourSteps = Math.round((hourDuration / totalDuration) * steps);
+        
+        if (!stepData.days[dateKey].hourlySteps[hour]) {
+          stepData.days[dateKey].hourlySteps[hour] = 0;
+        }
+        stepData.days[dateKey].hourlySteps[hour] += hourSteps;
+      }
+    }
+    
+    // Update total steps
+    stepData.days[dateKey].totalSteps = (stepData.days[dateKey].totalSteps || 0) + steps;
+    
+    // Save updated data
+    PrismUtils.saveMonth('steps', ymStr, stepData);
+  }
+
+  function updateStepDisplay() {
+    const dateKey = getCurrentDate();
+    const ymStr = dateKey.substring(0, 7);
+    const stepData = PrismUtils.loadMonth('steps', ymStr);
+    const dayData = stepData.days?.[dateKey] || { totalSteps: 0, sessions: [], hourlySteps: {} };
+    
+    const settings = getStepSettings();
+    const totalSteps = dayData.totalSteps || 0;
+    const sessions = dayData.sessions?.length || 0;
+    const activeHours = Object.keys(dayData.hourlySteps || {}).length;
+    
+    // Update progress
+    document.getElementById('daily-steps-progress').textContent = `${totalSteps.toLocaleString()} / ${settings.dailyGoal.toLocaleString()}`;
+    document.getElementById('total-steps-today').textContent = totalSteps.toLocaleString();
+    document.getElementById('walking-sessions-today').textContent = sessions;
+    document.getElementById('active-hours-today').textContent = activeHours;
+    
+    // Update progress bar
+    const progress = Math.min((totalSteps / settings.dailyGoal) * 100, 100);
+    document.getElementById('daily-steps-fill').style.width = `${progress}%`;
+  }
+
+  function loadRecentStepSessions() {
+    const dateKey = getCurrentDate();
+    const ymStr = dateKey.substring(0, 7);
+    const stepData = PrismUtils.loadMonth('steps', ymStr);
+    const dayData = stepData.days?.[dateKey] || { sessions: [] };
+    
+    const container = document.getElementById('recent-step-sessions');
+    const sessions = dayData.sessions || [];
+    
+    if (sessions.length === 0) {
+      container.innerHTML = '<div class="info-text">No walking sessions yet today.</div>';
+      return;
+    }
+    
+    // Show last 3 sessions
+    const recentSessions = sessions.slice(-3).reverse();
+    container.innerHTML = recentSessions.map(session => {
+      const startTime = new Date(session.startTime);
+      const duration = Math.floor(session.duration / 60);
+      
+      return `
+        <div class="card" style="margin-bottom: 8px; padding: 8px;">
+          <div class="flex flex-between">
+            <div>
+              <div style="font-weight: 600;">${session.steps} steps</div>
+              <div class="info-text" style="font-size: 11px;">
+                ${startTime.toLocaleTimeString()} • ${duration} min
+              </div>
+            </div>
+            <div class="chip" style="background: var(--pri);">${session.steps}</div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  function showStepStats() {
+    document.getElementById('tab-steps').classList.add('hidden');
+    document.getElementById('step-stats-screen').classList.remove('hidden');
+    
+    // Initialize with current month
+    const now = new Date();
+    const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('step-month-picker').value = monthStr;
+    
+    refreshStepStats();
+  }
+
+  function exitStepStats() {
+    document.getElementById('step-stats-screen').classList.add('hidden');
+    document.getElementById('tab-steps').classList.remove('hidden');
+  }
+
+  function refreshStepStats() {
+    const monthStr = document.getElementById('step-month-picker').value;
+    if (!monthStr) return;
+    
+    const stepData = PrismUtils.loadMonth('steps', monthStr);
+    const days = stepData.days || {};
+    
+    let totalSessions = 0;
+    let totalSteps = 0;
+    let activeDays = 0;
+    
+    // Calculate totals
+    Object.values(days).forEach(day => {
+      totalSessions += day.sessions?.length || 0;
+      totalSteps += day.totalSteps || 0;
+      if (day.totalSteps > 0) activeDays++;
+    });
+    
+    const avgDaily = activeDays > 0 ? Math.round(totalSteps / activeDays) : 0;
+    
+    // Update summary stats
+    document.getElementById('step-total-sessions').textContent = totalSessions;
+    document.getElementById('step-total-steps').textContent = totalSteps.toLocaleString();
+    document.getElementById('step-avg-daily').textContent = avgDaily.toLocaleString();
+    
+    // Update table
+    const tbody = document.getElementById('step-stats-body');
+    const sortedDays = Object.entries(days)
+      .filter(([_, day]) => day.totalSteps > 0)
+      .sort(([a], [b]) => b.localeCompare(a));
+    
+    if (sortedDays.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="4">No step data for this month</td></tr>';
+      return;
+    }
+    
+    tbody.innerHTML = sortedDays.map(([dateKey, day]) => {
+      const date = new Date(dateKey).toLocaleDateString();
+      const sessions = day.sessions?.length || 0;
+      const steps = day.totalSteps || 0;
+      const activeHours = Object.keys(day.hourlySteps || {}).length;
+      
+      return `
+        <tr>
+          <td>${date}</td>
+          <td>${sessions}</td>
+          <td>${steps.toLocaleString()}</td>
+          <td>${activeHours}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  /* ===== Chant Management ===== */
+  function refreshChantTab() {
+    updateChantSummary();
+  }
+
+  function updateChantSummary() {
+    const dateKey = getCurrentDate();
+    const dayData = PrismUtils.ensureDay('chants', dateKey);
+    
+    const sessions = dayData.sessions || [];
+    const totalCount = dayData.totalCount || 0;
+    const goal = dayData.dailyChantGoal || 108;
+    
+    const summaryEl = document.getElementById('today-chant-summary');
+    if (sessions.length === 0) {
+      summaryEl.textContent = 'No sessions yet today.';
+    } else {
+      summaryEl.innerHTML = `<b>${sessions.length}</b> session(s) today • <b>${totalCount}</b> total counts`;
+    }
+    
+    // Update goal progress
+    document.getElementById('chant-progress-text').textContent = `${totalCount} / ${goal}`;
+    const percentage = Math.min((totalCount / goal) * 100, 100);
+    document.getElementById('chant-progress-fill').style.width = `${percentage}%`;
+  }
+
+  function startChantSession() {
+    chantSession = {
+      startedAt: PrismUtils.nowISO(),
+      endedAt: null,
+      count: 0
+    };
+    
+    document.getElementById('session-start').textContent = `Started: ${new Date().toLocaleTimeString()}`;
+    document.getElementById('chant-count').textContent = '0';
+    
+    if (navigator.vibrate) navigator.vibrate(10);
+  }
+
+  function incrementChant() {
+    if (!chantSession) {
+      startChantSession();
+    }
+    
+    chantSession.count++;
+    document.getElementById('chant-count').textContent = String(chantSession.count);
+    
+    if (navigator.vibrate) navigator.vibrate(6);
+  }
+
+  function decrementChant() {
+    if (!chantSession || chantSession.count <= 0) return;
+    
+    chantSession.count--;
+    document.getElementById('chant-count').textContent = String(chantSession.count);
+    
+    if (navigator.vibrate) navigator.vibrate(3);
+  }
+
+  function finishAndSaveChant() {
+    if (!chantSession) return;
+    
+    chantSession.endedAt = PrismUtils.nowISO();
+    
+    // Save to current date's record
+    const dateKey = getCurrentDate();
+    const dayData = PrismUtils.ensureDay('chants', dateKey);
+    
+    dayData.sessions.push({
+      startedAt: chantSession.startedAt,
+      endedAt: chantSession.endedAt,
+      count: chantSession.count
+    });
+    
+    dayData.totalCount = (dayData.totalCount || 0) + chantSession.count;
+    
+    const ymStr = dateKey.substring(0, 7);
+    const chantData = PrismUtils.loadMonth('chants', ymStr);
+    chantData.days[dateKey] = dayData;
+    PrismUtils.saveMonth('chants', ymStr, chantData);
+    
+    showToast(`Saved ${chantSession.count} counts`);
+    
+    // Reset session
+    chantSession = null;
+    document.getElementById('chant-count').textContent = '0';
+    document.getElementById('session-start').textContent = '';
+    
+    updateChantSummary();
+  }
+
+  /* ===== Chant Stats ===== */
+  function showChantStats() {
+    document.getElementById('tab-chant').classList.add('hidden');
+    document.getElementById('chant-stats-screen').classList.remove('hidden');
+    
+    const { ymStr } = PrismUtils.currentYearMonth();
+    document.getElementById('chant-month-picker').value = ymStr;
+    refreshChantStats();
+  }
+
+  function exitChantStats() {
+    document.getElementById('chant-stats-screen').classList.add('hidden');
+    document.getElementById('tab-chant').classList.remove('hidden');
+  }
+
+  function refreshChantStats() {
+    const monthPicker = document.getElementById('chant-month-picker');
+    if (!monthPicker.value) {
+      const { ymStr } = PrismUtils.currentYearMonth();
+      monthPicker.value = ymStr;
+    }
+    
+    const mKey = monthPicker.value;
+    const data = PrismUtils.loadMonth('chants', mKey);
+    const days = Object.keys(data.days || {}).sort();
+    
+    let totalSessions = 0;
+    let totalCounts = 0;
+    
+    days.forEach(d => {
+      const dayData = data.days[d] || {};
+      const sessions = dayData.sessions || [];
+      totalSessions += sessions.length;
+      totalCounts += dayData.totalCount || 0;
+    });
+    
+    const avgDaily = days.length > 0 ? Math.round(totalCounts / days.length) : 0;
+    
+    document.getElementById('chant-total-sessions').textContent = totalSessions;
+    document.getElementById('chant-total-counts').textContent = totalCounts;
+    document.getElementById('chant-avg-daily').textContent = avgDaily;
+    
+    // Render table
+    const tbody = document.getElementById('chant-stats-body');
+    if (days.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="3">No data yet</td></tr>';
+    } else {
+      tbody.innerHTML = days.map(d => {
+        const dayData = data.days[d] || {};
+        const sessions = dayData.sessions || [];
+        const counts = dayData.totalCount || 0;
+        return `<tr><td>${d}</td><td>${sessions.length}</td><td>${counts}</td></tr>`;
+      }).join('');
+    }
+    
+    // Session details
+    const detailsEl = document.getElementById('chant-session-details');
+    detailsEl.innerHTML = days.map(d => {
+      const dayData = data.days[d] || {};
+      const sessions = dayData.sessions || [];
+      if (sessions.length === 0) return '';
+      
+      return `
+        <h3 style="margin-top: 16px; color: var(--text);">${d}</h3>
+        ${sessions.map((s, i) => `
+          <div class="card">
+            <div><b>Session ${i + 1}</b></div>
+        <div class="success-text">Start: ${new Date(s.startedAt).toLocaleTimeString()}</div>
+        <div class="error-text">End: ${s.endedAt ? new Date(s.endedAt).toLocaleTimeString() : ''}</div>
+            <div><b>Count:</b> ${s.count || 0}</div>
+          </div>
+        `).join('')}
+      `;
+    }).join('');
+  }
+
+  /* ===== Hourly Log Management ===== */
+  function refreshHourlyTab() {
+    // Set default date to today
+    const todayKey = PrismUtils.todayKey();
+    currentHourlyDate = todayKey;
+    document.getElementById('hourly-date-picker').value = todayKey;
+    refreshHourlyLog();
+  }
+  
+  function refreshHourlyLog() {
+    const datePicker = document.getElementById('hourly-date-picker');
+    const selectedDate = datePicker.value || getCurrentDate();
+    
+    // Update global current date if different
+    if (selectedDate !== currentSelectedDate) {
+      setCurrentDate(selectedDate);
+      return; // setCurrentDate will call refreshHourlyLog again
+    }
+    
+    currentHourlyDate = selectedDate;
+    const dayData = PrismUtils.ensureDay('hourly', selectedDate);
+    
+    // Load step data for the same date
+    const stepData = PrismUtils.loadMonth('steps', selectedDate.substring(0, 7));
+    const stepDayData = stepData.days?.[selectedDate] || { hourlySteps: {} };
+    
+    // Merge step counts with hourly entries
+    const mergedEntries = { ...dayData.entries };
+    Object.entries(stepDayData.hourlySteps || {}).forEach(([hour, steps]) => {
+      if (!mergedEntries[hour]) {
+        mergedEntries[hour] = {};
+      }
+      mergedEntries[hour].steps = steps;
+    });
+    
+    renderHourlyTimeline(mergedEntries);
+  }
+  
+  function renderHourlyTimeline(entries) {
+    const timeline = document.getElementById('hourly-timeline');
+    let html = '';
+    
+    for (let hour = 0; hour < 24; hour++) {
+      const hourKey = hour.toString();
+      const entry = entries[hourKey];
+      const hourDisplay = String(hour).padStart(2, '0') + ':00';
+      const isLogged = !!entry;
+      
+      html += `
+        <div class="hour-slot ${isLogged ? 'logged' : ''}">
+          <div class="hour-time">${hourDisplay}</div>
+          <div class="hour-content">
+            ${isLogged ? renderHourlyEntry(entry) : '<div class="hour-entry-empty">No activity logged</div>'}
+          </div>
+          <div class="hour-actions">
+            <button class="btn pri small" onclick="openHourlyModal(${hour})">${isLogged ? 'Edit' : '+ Log'}</button>
+            ${isLogged ? `<button class="btn small warn" onclick="deleteHourlyEntry(${hour})">Delete</button>` : ''}
+          </div>
+        </div>
+      `;
+    }
+    
+    timeline.innerHTML = html;
+  }
+  
+  function renderHourlyEntry(entry) {
+    let html = '';
+    
+    // Tasks
+    if (entry.tasks && entry.tasks.length > 0) {
+      html += '<div class="hour-summary"><strong>Tasks:</strong> ' + entry.tasks.map(t => t.title).join(', ') + '</div>';
+    }
+    
+    // Additional tasks
+    if (entry.additionalTasks) {
+      html += '<div class="hour-summary"><strong>Other:</strong> ' + entry.additionalTasks + '</div>';
+    }
+    
+    // Points
+    if (entry.points > 0) {
+      html += '<div class="hour-summary"><strong>Points:</strong> ' + entry.points + '</div>';
+    }
+    
+    // Steps
+    if (entry.steps > 0) {
+      html += '<div class="hour-summary"><strong>Steps:</strong> ' + entry.steps.toLocaleString() + ' 👟</div>';
+    }
+    
+    // Feelings and rating
+    if (entry.feelings || entry.rating || entry.points > 0) {
+      html += '<div class="hour-feeling-rating">';
+      if (entry.feelings && entry.feelings.length > 0) {
+        entry.feelings.forEach(feeling => {
+          html += `<span class="chip">${getFeelingEmoji(feeling)} ${feeling}</span>`;
+        });
+      }
+      if (entry.rating) {
+        html += `<span class="chip">${entry.rating} ⭐</span>`;
+      }
+      if (entry.points > 0) {
+        html += `<span class="chip" style="background: var(--pri); color: white;">${entry.points}pt</span>`;
+      }
+      html += '</div>';
+    }
+    
+    // Notes
+    if (entry.notes) {
+      html += '<div class="hour-summary"><strong>Notes:</strong> ' + entry.notes + '</div>';
+    }
+    
+    return html || '<div class="hour-entry-empty">Empty entry</div>';
+  }
+  
+  function getFeelingEmoji(feeling) {
+    const emojiMap = {
+      'energized': '😁',
+      'focused': '🎯', 
+      'productive': '⚡',
+      'neutral': '😐',
+      'distracted': '😵',
+      'tired': '😴',
+      'stressed': '😰'
+    };
+    return emojiMap[feeling] || '😐';
+  }
+  
+  function openHourlyModal(hour) {
+    editingHourlyHour = hour;
+    const hourDisplay = String(hour).padStart(2, '0') + ':00';
+    
+    // Get existing entry if any
+    const dayData = PrismUtils.ensureDay('hourly', currentHourlyDate);
+    const entry = dayData.entries[hour.toString()] || {};
+    
+    document.getElementById('hourly-modal-title').textContent = entry ? 'Edit Activity Log' : 'Log Activity';
+    document.getElementById('hourly-hour').value = hourDisplay;
+    
+    // Load available tasks
+    loadHourlyTaskChips();
+    
+    // Load existing data
+    if (entry) {
+      selectedHourlyTasks = entry.tasks || [];
+      document.getElementById('hourly-additional-tasks').value = entry.additionalTasks || '';
+      document.getElementById('hourly-notes').value = entry.notes || '';
+      document.getElementById('hourly-points').textContent = entry.points || 0;
+      selectedFeelings = entry.feelings || [];
+      selectedRating = entry.rating || null;
+      
+      // Update UI selections
+      updateHourlyTaskSelection();
+      updateFeelingSelection();
+      if (selectedRating) selectRating(selectedRating);
+    } else {
+      // Reset form
+      selectedHourlyTasks = [];
+      document.getElementById('hourly-additional-tasks').value = '';
+      document.getElementById('hourly-notes').value = '';
+      document.getElementById('hourly-points').textContent = '0';
+      selectedFeelings = [];
+      selectedRating = null;
+      resetHourlySelections();
+    }
+    
+    document.getElementById('hourly-log-modal').classList.remove('hidden');
+  }
+  
+  function loadHourlyTaskChips() {
+    const allTasks = loadTasks().filter(t => t.status !== 'done');
+    const container = document.getElementById('hourly-task-chips');
+    
+    if (allTasks.length === 0) {
+      container.innerHTML = '<div class="warning-text">No active tasks available</div>';
+      return;
+    }
+    
+    container.innerHTML = allTasks.map(task => `
+      <span class="chip clickable" data-task-id="${task.id}" onclick="toggleHourlyTask('${task.id}', '${task.title}')">${task.title}</span>
+    `).join('');
+    
+    updateHourlyTaskSelection();
+  }
+  
+  function toggleHourlyTask(taskId, taskTitle) {
+    const existingIndex = selectedHourlyTasks.findIndex(t => t.id === taskId);
+    if (existingIndex >= 0) {
+      selectedHourlyTasks.splice(existingIndex, 1);
+    } else {
+      selectedHourlyTasks.push({ id: taskId, title: taskTitle });
+    }
+    updateHourlyTaskSelection();
+  }
+  
+  function updateHourlyTaskSelection() {
+    document.querySelectorAll('#hourly-task-chips .chip').forEach(chip => {
+      const taskId = chip.dataset.taskId;
+      const isSelected = selectedHourlyTasks.some(t => t.id === taskId);
+      chip.classList.toggle('active', isSelected);
+    });
+  }
+  
+  function selectFeeling(feeling) {
+    const index = selectedFeelings.indexOf(feeling);
+    if (index >= 0) {
+      // Remove feeling if already selected
+      selectedFeelings.splice(index, 1);
+    } else {
+      // Add feeling if not selected
+      selectedFeelings.push(feeling);
+    }
+    updateFeelingSelection();
+  }
+  
+  function updateFeelingSelection() {
+    document.querySelectorAll('[data-feeling]').forEach(el => {
+      const feeling = el.dataset.feeling;
+      const isSelected = selectedFeelings.includes(feeling);
+      el.classList.toggle('active', isSelected);
+    });
+  }
+  
+  function selectRating(rating) {
+    selectedRating = rating;
+    document.querySelectorAll('[data-rating]').forEach(el => el.classList.remove('active'));
+    document.querySelector(`[data-rating="${rating}"]`).classList.add('active');
+  }
+  
+  function resetHourlySelections() {
+    document.querySelectorAll('#hourly-task-chips .chip').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('[data-feeling]').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('[data-rating]').forEach(el => el.classList.remove('active'));
+    selectedFeelings = [];
+  }
+  
+  function closeHourlyModal() {
+    document.getElementById('hourly-log-modal').classList.add('hidden');
+  }
+  
+  function saveHourlyEntry(event) {
+    event.preventDefault();
+    
+    if (editingHourlyHour === null) return;
+    
+    const additionalTasks = document.getElementById('hourly-additional-tasks').value.trim();
+    const notes = document.getElementById('hourly-notes').value.trim();
+    const points = parseInt(document.getElementById('hourly-points').textContent) || 0;
+    
+    // Get existing entry to calculate point difference
+    const dayData = PrismUtils.ensureDay('hourly', currentHourlyDate);
+    const existingEntry = dayData.entries[editingHourlyHour.toString()];
+    const oldPoints = existingEntry?.points || 0;
+    const pointsDiff = points - oldPoints;
+    
+    // Create entry object
+    const entry = {
+      hour: editingHourlyHour,
+      tasks: selectedHourlyTasks,
+      additionalTasks: additionalTasks || null,
+      feelings: selectedFeelings.length > 0 ? selectedFeelings : null,
+      rating: selectedRating,
+      notes: notes || null,
+      points: points,
+      loggedAt: PrismUtils.nowISO()
+    };
+    
+    // Save hourly entry
+    dayData.entries[editingHourlyHour.toString()] = entry;
+    
+    const { ymStr } = PrismUtils.currentYearMonth();
+    const hourlyData = PrismUtils.loadMonth('hourly', currentHourlyDate.substring(0, 7));
+    hourlyData.days[currentHourlyDate] = dayData;
+    PrismUtils.saveMonth('hourly', currentHourlyDate.substring(0, 7), hourlyData);
+    
+    // Update daily progress points
+    if (pointsDiff !== 0) {
+      const progressData = PrismUtils.ensureDay('progress', currentHourlyDate);
+      progressData.completedPoints = (progressData.completedPoints || 0) + pointsDiff;
+      
+      const progressMonthData = PrismUtils.loadMonth('progress', currentHourlyDate.substring(0, 7));
+      progressMonthData.days[currentHourlyDate] = progressData;
+      PrismUtils.saveMonth('progress', currentHourlyDate.substring(0, 7), progressMonthData);
+    }
+    
+    showToast(`Hourly activity logged successfully! ${points > 0 ? `+${points} points` : ''}`);
+    
+    closeHourlyModal();
+    refreshHourlyLog();
+    
+    // Refresh tasks tab if it's today to update points ring
+    if (currentHourlyDate === PrismUtils.todayKey() && currentTab === 'tasks') {
+      updatePointsRing();
+    }
+  }
+  
+  function deleteHourlyEntry(hour) {
+    if (!confirm('Delete this hourly entry?')) return;
+    
+    const dayData = PrismUtils.ensureDay('hourly', currentHourlyDate);
+    const existingEntry = dayData.entries[hour.toString()];
+    const pointsToRemove = existingEntry?.points || 0;
+    
+    delete dayData.entries[hour.toString()];
+    
+    const { ymStr } = PrismUtils.currentYearMonth();
+    const hourlyData = PrismUtils.loadMonth('hourly', currentHourlyDate.substring(0, 7));
+    hourlyData.days[currentHourlyDate] = dayData;
+    PrismUtils.saveMonth('hourly', currentHourlyDate.substring(0, 7), hourlyData);
+    
+    // Remove points from daily progress
+    if (pointsToRemove > 0) {
+      const progressData = PrismUtils.ensureDay('progress', currentHourlyDate);
+      progressData.completedPoints = Math.max(0, (progressData.completedPoints || 0) - pointsToRemove);
+      
+      const progressMonthData = PrismUtils.loadMonth('progress', currentHourlyDate.substring(0, 7));
+      progressMonthData.days[currentHourlyDate] = progressData;
+      PrismUtils.saveMonth('progress', currentHourlyDate.substring(0, 7), progressMonthData);
+    }
+    
+    showToast('Hourly entry deleted.');
+    refreshHourlyLog();
+    
+    // Refresh tasks tab if it's today to update points ring
+    if (currentHourlyDate === PrismUtils.todayKey() && currentTab === 'tasks') {
+      updatePointsRing();
+    }
+  }
+  
+  function showHourlyStats() {
+    document.getElementById('tab-hourly').classList.add('hidden');
+    document.getElementById('hourly-stats-screen').classList.remove('hidden');
+    
+    document.getElementById('hourly-stats-date-picker').value = currentHourlyDate || PrismUtils.todayKey();
+    refreshHourlyStats();
+  }
+  
+  function exitHourlyStats() {
+    document.getElementById('hourly-stats-screen').classList.add('hidden');
+    document.getElementById('tab-hourly').classList.remove('hidden');
+  }
+  
+  function refreshHourlyStats() {
+    const datePicker = document.getElementById('hourly-stats-date-picker');
+    const selectedDate = datePicker.value || PrismUtils.todayKey();
+    
+    const dayData = PrismUtils.ensureDay('hourly', selectedDate);
+    const entries = dayData.entries;
+    
+    const container = document.getElementById('hourly-stats-content');
+    const entryHours = Object.keys(entries).map(h => parseInt(h)).sort((a, b) => a - b);
+    
+    if (entryHours.length === 0) {
+      container.innerHTML = '<div class="card"><div class="info-text">No hourly entries for this date.</div></div>';
+      return;
+    }
+    
+    // Calculate total points from hourly entries
+    let totalHourlyPoints = 0;
+    entryHours.forEach(hour => {
+      const entry = entries[hour.toString()];
+      totalHourlyPoints += entry.points || 0;
+    });
+    
+    let html = `<h3>Summary for ${selectedDate}</h3>`;
+    html += `<div class="card">
+      <div><strong>Total logged hours:</strong> ${entryHours.length}/24</div>
+      <div><strong>Total hourly points:</strong> ${totalHourlyPoints}</div>
+    </div>`;
+    
+    // Detailed breakdown
+    html += entryHours.map(hour => {
+      const entry = entries[hour.toString()];
+      const hourDisplay = String(hour).padStart(2, '0') + ':00';
+      
+      return `
+        <div class="card">
+          <h4>${hourDisplay}</h4>
+          ${renderHourlyEntry(entry)}
+        </div>
+      `;
+    }).join('');
+    
+    container.innerHTML = html;
+  }
+
+  /* ===== Daily Tasks View ===== */
+  function refreshDailyTab() {
+    // Set default date to today
+    const todayKey = PrismUtils.todayKey();
+    document.getElementById('daily-date-picker').value = todayKey;
+    refreshDailyView();
+  }
+
+  function refreshDailyView() {
+    const datePicker = document.getElementById('daily-date-picker');
+    const selectedDate = datePicker.value || getCurrentDate();
+    
+    // Update global current date if different
+    if (selectedDate !== currentSelectedDate) {
+      setCurrentDate(selectedDate);
+      return; // setCurrentDate will call refreshDailyView again
+    }
+    
+    // Update preview text for cards
+    updateDailyPreviews(selectedDate);
+  }
+  
+  function updateDailyPreviews(dateKey) {
+    const tasks = loadTasks();
+    const progressData = PrismUtils.ensureDay('progress', dateKey);
+    const chantData = PrismUtils.ensureDay('chants', dateKey);
+    
+    const completedTasks = tasks.filter(t => t.status === 'done').length;
+    const totalTasks = tasks.length;
+    const pointsCompleted = progressData.completedPoints || 0;
+    const pointsGoal = progressData.dailyPointsGoal || 24;
+    const sessions = progressData.sessions || [];
+    
+    // Update preview texts
+    document.getElementById('overview-preview').textContent = 
+      `${completedTasks}/${totalTasks} tasks • ${pointsCompleted}/${pointsGoal} points`;
+    
+    document.getElementById('goals-preview').textContent = 
+      `${Math.round((pointsCompleted/pointsGoal)*100)}% complete`;
+    
+    document.getElementById('tags-preview').textContent = 
+      `${totalTasks} tasks across priorities`;
+    
+    document.getElementById('timeline-preview').textContent = 
+      `${sessions.length} completed activities`;
+  }
+
+  function renderDailyOverview(dateKey) {
+    const tasks = loadTasks();
+    const progressData = PrismUtils.ensureDay('progress', dateKey);
+    const chantData = PrismUtils.ensureDay('chants', dateKey);
+    const hourlyData = PrismUtils.ensureDay('hourly', dateKey);
+    
+    const container = document.getElementById('daily-overview-content');
+    
+    // Calculate task statistics
+    const totalTasks = tasks.length;
+    const completedTasks = tasks.filter(t => t.status === 'done').length;
+    const pendingTasks = totalTasks - completedTasks;
+    const completionPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
+    
+    // Calculate points and chants
+    const pointsCompleted = progressData.completedPoints || 0;
+    const pointsGoal = progressData.dailyPointsGoal || 24;
+    const chantCompleted = chantData.totalCount || 0;
+    const chantGoal = chantData.dailyChantGoal || 108;
+    
+    // Calculate hourly activity
+    const hourlyEntries = Object.keys(hourlyData.entries || {}).length;
+    const hourlyPoints = Object.values(hourlyData.entries || {}).reduce((sum, entry) => sum + (entry.points || 0), 0);
+    
+    // Calculate productivity insights
+    const focusSessions = progressData.sessions?.filter(s => s.method !== 'keyboard').length || 0;
+    const quickCompletions = progressData.sessions?.filter(s => s.method === 'keyboard').length || 0;
+    
+    // Get most productive time (if hourly data exists)
+    let mostProductiveHour = 'N/A';
+    if (hourlyEntries > 0) {
+      const hourlyScores = Object.entries(hourlyData.entries || {}).map(([hour, entry]) => ({
+        hour: parseInt(hour),
+        score: (entry.points || 0) + (entry.tasks?.length || 0) * 2 + (entry.rating || 0)
+      }));
+      
+      if (hourlyScores.length > 0) {
+        const bestHour = hourlyScores.reduce((best, current) => current.score > best.score ? current : best);
+        mostProductiveHour = String(bestHour.hour).padStart(2, '0') + ':00';
+      }
+    }
+    
+    const isToday = dateKey === PrismUtils.todayKey();
+    const dateLabel = isToday ? 'Today' : new Date(dateKey).toLocaleDateString();
+    
+    let html = `
+      <div style="margin-bottom: 10px;">
+        <h4 style="margin: 0 0 4px 0; color: var(--text); font-size: 12px;">${dateLabel}'s Summary</h4>
+        <div class="muted" style="font-size: 11px; line-height: 1.3;">
+          ${completedTasks}/${totalTasks} tasks (${completionPercentage}%) • 
+          ${pointsCompleted}/${pointsGoal} pts • 
+          ${chantCompleted}/${chantGoal} chants
+        </div>
+      </div>
+      
+      <div class="stats-grid" style="grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;">
+        <div class="stat-box" style="background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px;">
+          <div class="stat-number" style="color: var(--accent); font-size: 14px;">${hourlyEntries}</div>
+          <div class="stat-label" style="font-size: 9px;">Hours Logged</div>
+        </div>
+        <div class="stat-box" style="background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 6px;">
+          <div class="stat-number" style="color: var(--pri); font-size: 14px;">${hourlyPoints}</div>
+          <div class="stat-label" style="font-size: 9px;">Hourly Points</div>
+        </div>
+      </div>
+    `;
+    
+    // Add insights section
+    if (completedTasks > 0 || hourlyEntries > 0) {
+      html += `
+        <div style="margin-top: 10px;">
+          <h4 style="margin: 0 0 4px 0; color: var(--text); font-size: 11px;">Insights</h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 3px;">
+      `;
+      
+      if (focusSessions > 0) {
+        html += `<span class="chip" style="background: var(--accent); color: white;">${focusSessions} Focus Sessions</span>`;
+      }
+      
+      if (quickCompletions > 0) {
+        html += `<span class="chip" style="background: var(--pri); color: white;">${quickCompletions} Quick Completions</span>`;
+      }
+      
+      if (mostProductiveHour !== 'N/A') {
+        html += `<span class="chip">Most Productive: ${mostProductiveHour}</span>`;
+      }
+      
+      // Add completion streak info if available
+      const completionRate = Math.round((pointsCompleted / pointsGoal) * 100);
+      if (completionRate >= 100) {
+        html += `<span class="chip" style="background: var(--pri); color: white;">🎯 Goal Achieved!</span>`;
+      } else if (completionRate >= 75) {
+        html += `<span class="chip" style="background: var(--accent); color: white;">🔥 On Track</span>`;
+      }
+      
+      html += `</div></div>`;
+    }
+    
+    // Add daily mood/energy if hourly data exists
+    if (hourlyEntries > 0) {
+      const allFeelings = Object.values(hourlyData.entries || {})
+        .filter(entry => entry.feelings && entry.feelings.length > 0)
+        .flatMap(entry => entry.feelings);
+      
+      const avgRating = Object.values(hourlyData.entries || {})
+        .filter(entry => entry.rating)
+        .reduce((sum, entry, _, arr) => sum + entry.rating / arr.length, 0);
+      
+      if (allFeelings.length > 0 || avgRating > 0) {
+        html += `
+          <div style="margin-top: 10px;">
+            <h4 style="margin: 0 0 4px 0; color: var(--text); font-size: 11px;">Daily Mood</h4>
+        `;
+        
+        if (avgRating > 0) {
+          html += `<div class="muted" style="margin-bottom: 4px; font-size: 10px;">Avg: ${avgRating.toFixed(1)}/5 ⭐</div>`;
+        }
+        
+        if (allFeelings.length > 0) {
+          // Count feeling frequencies
+          const feelingCounts = allFeelings.reduce((acc, feeling) => {
+            acc[feeling] = (acc[feeling] || 0) + 1;
+            return acc;
+          }, {});
+          
+          const topFeelings = Object.entries(feelingCounts)
+            .sort(([,a], [,b]) => b - a)
+            .slice(0, 3);
+          
+          html += `<div style="display: flex; flex-wrap: wrap; gap: 2px;">`;
+          topFeelings.forEach(([feeling, count]) => {
+            const emoji = getFeelingEmoji(feeling);
+            html += `<span class="chip" style="font-size: 9px; padding: 2px 4px;">${emoji} ${feeling} (${count})</span>`;
+          });
+          html += `</div>`;
+        }
+        
+        html += `</div>`;
+      }
+    }
+    
+    container.innerHTML = html;
+  }
+
+  function updateDailyGoalsSummary(dateKey) {
+    // Get progress data
+    const progressData = PrismUtils.ensureDay('progress', dateKey);
+    const chantData = PrismUtils.ensureDay('chants', dateKey);
+    
+    const pointsCompleted = progressData.completedPoints || 0;
+    const pointsGoal = progressData.dailyPointsGoal || 24;
+    const chantCompleted = chantData.totalCount || 0;
+    const chantGoal = chantData.dailyChantGoal || 108;
+    
+    // Calculate completion rate based on both goals
+    const pointsRate = Math.min((pointsCompleted / pointsGoal) * 100, 100);
+    const chantRate = Math.min((chantCompleted / chantGoal) * 100, 100);
+    const overallRate = Math.round((pointsRate + chantRate) / 2);
+    
+    document.getElementById('daily-points-progress').textContent = `${pointsCompleted} / ${pointsGoal}`;
+    document.getElementById('daily-chant-progress').textContent = `${chantCompleted} / ${chantGoal}`;
+    document.getElementById('daily-completion-rate').textContent = `${overallRate}%`;
+  }
+
+  function renderTasksByTag(dateKey) {
+    const tasks = loadTasks();
+    const container = document.getElementById('daily-tasks-by-tag');
+    
+    // Group tasks by priority tag
+    const tasksByPriority = {
+      'Do': tasks.filter(t => t.priority_tag === 'Do'),
+      'Plan': tasks.filter(t => t.priority_tag === 'Plan'),
+      'Delegate': tasks.filter(t => t.priority_tag === 'Delegate'),
+      'Drop': tasks.filter(t => t.priority_tag === 'Drop')
+    };
+    
+    // Group tasks by energy level
+    const tasksByEnergy = {
+      'high': tasks.filter(t => t.energy === 'high'),
+      'med': tasks.filter(t => t.energy === 'med'),
+      'low': tasks.filter(t => t.energy === 'low')
+    };
+    
+    let html = '<h3>Tasks by Priority</h3>';
+    
+    Object.entries(tasksByPriority).forEach(([priority, priorityTasks]) => {
+      if (priorityTasks.length === 0) return;
+      
+      const completedTasks = priorityTasks.filter(t => t.status === 'done');
+      const pendingTasks = priorityTasks.filter(t => t.status !== 'done');
+      
+      html += `
+        <div class="card" style="margin-bottom: 6px;">
+          <h4 style="margin: 0 0 4px 0; color: var(--text); font-size: 11px;">
+            ${priority} 
+            <span class="chip" style="font-size: 9px; padding: 1px 4px;">${completedTasks.length}/${priorityTasks.length}</span>
+          </h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 2px;">
+            ${priorityTasks.map(task => `
+              <span class="chip ${task.status === 'done' ? 'active' : ''}" 
+                    style="font-size: 9px; padding: 2px 4px; ${task.status === 'done' ? 'text-decoration: line-through; opacity: 0.7;' : ''}">
+                ${task.status === 'done' ? '✓ ' : ''}${task.title} (${task.points}pt)
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '<h3 style="margin-top: 12px; font-size: 12px;">Tasks by Energy Level</h3>';
+    
+    Object.entries(tasksByEnergy).forEach(([energy, energyTasks]) => {
+      if (energyTasks.length === 0) return;
+      
+      const completedTasks = energyTasks.filter(t => t.status === 'done');
+      const energyLabel = energy.charAt(0).toUpperCase() + energy.slice(1);
+      
+      html += `
+        <div class="card" style="margin-bottom: 6px;">
+          <h4 style="margin: 0 0 4px 0; color: var(--text); font-size: 11px;">
+            ${energyLabel} Energy 
+            <span class="chip" style="font-size: 9px; padding: 1px 4px;">${completedTasks.length}/${energyTasks.length}</span>
+          </h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 2px;">
+            ${energyTasks.map(task => `
+              <span class="chip ${task.status === 'done' ? 'active' : ''}"
+                    style="font-size: 9px; padding: 2px 4px; ${task.status === 'done' ? 'text-decoration: line-through; opacity: 0.7;' : ''}">
+                ${task.status === 'done' ? '✓ ' : ''}${task.title} (${task.points}pt)
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+  }
+
+  function renderTaskTimeline(dateKey) {
+    const tasks = loadTasks();
+    const progressData = PrismUtils.ensureDay('progress', dateKey);
+    const sessions = progressData.sessions || [];
+    
+    const container = document.getElementById('timeline-content');
+    
+    if (sessions.length === 0) {
+      container.innerHTML = '<div class="info-text">No completed tasks yet today.</div>';
+      return;
+    }
+    
+    // Sort sessions by completion time
+    const sortedSessions = sessions.sort((a, b) => {
+      const timeA = new Date(a.completedAt || a.endedAt);
+      const timeB = new Date(b.completedAt || b.endedAt);
+      return timeA - timeB;
+    });
+    
+    let html = '';
+    sortedSessions.forEach(session => {
+      const task = tasks.find(t => t.id === session.taskId);
+      const completionTime = new Date(session.completedAt || session.endedAt);
+      const timeStr = completionTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      html += `
+        <div class="card" style="margin-bottom: 4px; padding: 8px;">
+          <div class="flex flex-between">
+            <div style="flex: 1;">
+              <strong style="font-size: 12px;">${task ? task.title : 'Unknown Task'}</strong>
+              <div class="muted" style="font-size: 10px; line-height: 1.2;">
+                ${timeStr} • ${session.pointsEarned || 0} pts
+                ${session.method ? ` • ${session.method}` : ''}
+              </div>
+            </div>
+            <div class="task-points" style="background: var(--pri); width: 18px; height: 18px; font-size: 10px;">
+              ${session.pointsEarned || 0}
+            </div>
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+    
+    // Force scroll container to recalculate height
+    const scrollContainer = container.closest('[style*="overflow-y: auto"]');
+    if (scrollContainer) {
+      scrollContainer.style.height = 'auto';
+      setTimeout(() => {
+        scrollContainer.style.height = '';
+      }, 10);
+    }
+  }
+
+  /* ===== Daily View Popup Functions ===== */
+  function openDailyOverviewPopup() {
+    const datePicker = document.getElementById('daily-date-picker');
+    const selectedDate = datePicker.value || PrismUtils.todayKey();
+    
+    const container = document.getElementById('daily-overview-popup-content');
+    
+    // Generate overview content directly in popup
+    const tasks = loadTasks();
+    const progressData = PrismUtils.ensureDay('progress', selectedDate);
+    const chantData = PrismUtils.ensureDay('chants', selectedDate);
+    const hourlyData = PrismUtils.ensureDay('hourly', selectedDate);
+    const stepData = PrismUtils.loadMonth('steps', selectedDate.substring(0, 7));
+    const stepDayData = stepData.days?.[selectedDate] || { totalSteps: 0, sessions: [] };
+    
+    const completedTasks = tasks.filter(t => t.status === 'done').length;
+    const totalTasks = tasks.length;
+    const pointsCompleted = progressData.completedPoints || 0;
+    const pointsGoal = progressData.dailyPointsGoal || 24;
+    const chantCompleted = chantData.totalCount || 0;
+    const chantGoal = chantData.dailyChantGoal || 108;
+    const hourlyEntries = Object.keys(hourlyData.entries || {}).length;
+    const hourlyPoints = Object.values(hourlyData.entries || {}).reduce((sum, entry) => sum + (entry.points || 0), 0);
+    const stepsCompleted = stepDayData.totalSteps || 0;
+    const stepsSessions = stepDayData.sessions?.length || 0;
+    const settings = JSON.parse(localStorage.getItem('prism.settings') || '{}');
+    const stepsGoal = settings.dailyStepsGoal || 10000;
+    
+    const isToday = selectedDate === PrismUtils.todayKey();
+    const dateLabel = isToday ? 'Today' : new Date(selectedDate).toLocaleDateString();
+    
+    container.innerHTML = `
+      <div class="card">
+        <h4>${dateLabel}'s Summary</h4>
+        <div class="stats-grid" style="margin: 12px 0; grid-template-columns: 1fr 1fr 1fr 1fr;">
+          <div class="stat-box">
+            <div class="stat-number">${completedTasks}</div>
+            <div class="stat-label">Tasks Done</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${pointsCompleted}</div>
+            <div class="stat-label">Points</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${stepsCompleted.toLocaleString()}</div>
+            <div class="stat-label">Steps</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-number">${hourlyEntries}</div>
+            <div class="stat-label">Hours Logged</div>
+          </div>
+        </div>
+        <div class="muted">
+          ${Math.round((completedTasks/totalTasks)*100)}% tasks completed • 
+          ${Math.round((pointsCompleted/pointsGoal)*100)}% points goal • 
+          ${Math.round((chantCompleted/chantGoal)*100)}% chants goal • 
+          ${Math.round((stepsCompleted/stepsGoal)*100)}% steps goal
+        </div>
+      </div>
+      
+      <div class="card">
+        <h4>Productivity Insights</h4>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px;">
+          ${pointsCompleted >= pointsGoal ? '<span class="chip" style="background: var(--pri); color: white;">🎯 Points Goal Achieved!</span>' : ''}
+          ${chantCompleted >= chantGoal ? '<span class="chip" style="background: var(--pri); color: white;">🕉️ Chant Goal Achieved!</span>' : ''}
+          ${stepsCompleted >= stepsGoal ? '<span class="chip" style="background: var(--pri); color: white;">👟 Steps Goal Achieved!</span>' : ''}
+          ${hourlyEntries >= 8 ? '<span class="chip" style="background: var(--accent); color: white;">📊 Great Logging!</span>' : ''}
+          ${completedTasks >= 5 ? '<span class="chip" style="background: var(--accent); color: white;">⚡ Productive Day!</span>' : ''}
+          ${stepsSessions >= 3 ? '<span class="chip" style="background: var(--accent); color: white;">🚶 Active Day!</span>' : ''}
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('daily-overview-popup').classList.remove('hidden');
+  }
+  
+  function closeDailyOverviewPopup() {
+    document.getElementById('daily-overview-popup').classList.add('hidden');
+  }
+  
+  function openDailyGoalsPopup() {
+    const datePicker = document.getElementById('daily-date-picker');
+    const selectedDate = datePicker.value || PrismUtils.todayKey();
+    
+    const progressData = PrismUtils.ensureDay('progress', selectedDate);
+    const chantData = PrismUtils.ensureDay('chants', selectedDate);
+    
+    const pointsCompleted = progressData.completedPoints || 0;
+    const pointsGoal = progressData.dailyPointsGoal || 24;
+    const chantCompleted = chantData.totalCount || 0;
+    const chantGoal = chantData.dailyChantGoal || 108;
+    
+    // Update popup stats
+    document.getElementById('popup-daily-points-progress').textContent = `${pointsCompleted} / ${pointsGoal}`;
+    document.getElementById('popup-daily-chant-progress').textContent = `${chantCompleted} / ${chantGoal}`;
+    document.getElementById('popup-daily-completion-rate').textContent = 
+      `${Math.round(((pointsCompleted/pointsGoal + chantCompleted/chantGoal)/2)*100)}%`;
+    
+    // Add detailed content
+    const detailedContent = document.getElementById('goals-detailed-content');
+    detailedContent.innerHTML = `
+      <div class="card">
+        <h4>Points Progress</h4>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${Math.min((pointsCompleted/pointsGoal)*100, 100)}%"></div>
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 4px;">
+          ${pointsCompleted} of ${pointsGoal} points completed (${Math.round((pointsCompleted/pointsGoal)*100)}%)
+        </div>
+      </div>
+      
+      <div class="card">
+        <h4>Chant Progress</h4>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width: ${Math.min((chantCompleted/chantGoal)*100, 100)}%"></div>
+        </div>
+        <div class="muted" style="font-size: 12px; margin-top: 4px;">
+          ${chantCompleted} of ${chantGoal} chants completed (${Math.round((chantCompleted/chantGoal)*100)}%)
+        </div>
+      </div>
+      
+      <div class="card">
+        <h4>Sessions Today</h4>
+        <div class="muted" style="font-size: 12px;">
+          Focus sessions: ${progressData.sessions?.filter(s => s.method !== 'keyboard').length || 0}<br>
+          Quick completions: ${progressData.sessions?.filter(s => s.method === 'keyboard').length || 0}<br>
+          Chant sessions: ${chantData.sessions?.length || 0}
+        </div>
+      </div>
+    `;
+    
+    document.getElementById('daily-goals-popup').classList.remove('hidden');
+  }
+  
+  function closeDailyGoalsPopup() {
+    document.getElementById('daily-goals-popup').classList.add('hidden');
+  }
+  
+  function openTasksByTagPopup() {
+    const datePicker = document.getElementById('daily-date-picker');
+    const selectedDate = datePicker.value || PrismUtils.todayKey();
+    
+    const container = document.getElementById('tasks-by-tag-popup-content');
+    
+    // Generate tasks by tag content directly in popup
+    const tasks = loadTasks();
+    const tasksByPriority = {
+      'Do': tasks.filter(t => t.priority_tag === 'Do'),
+      'Plan': tasks.filter(t => t.priority_tag === 'Plan'),
+      'Delegate': tasks.filter(t => t.priority_tag === 'Delegate'),
+      'Drop': tasks.filter(t => t.priority_tag === 'Drop')
+    };
+    
+    const tasksByEnergy = {
+      'high': tasks.filter(t => t.energy === 'high'),
+      'med': tasks.filter(t => t.energy === 'med'),
+      'low': tasks.filter(t => t.energy === 'low')
+    };
+    
+    let html = '<h3>Tasks by Priority</h3>';
+    
+    Object.entries(tasksByPriority).forEach(([priority, priorityTasks]) => {
+      if (priorityTasks.length === 0) return;
+      
+      const completedTasks = priorityTasks.filter(t => t.status === 'done');
+      
+      html += `
+        <div class="card" style="margin-bottom: 8px;">
+          <h4 style="margin: 0 0 8px 0; color: var(--text);">
+            ${priority} 
+            <span class="chip">${completedTasks.length}/${priorityTasks.length} done</span>
+          </h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            ${priorityTasks.map(task => `
+              <span class="chip ${task.status === 'done' ? 'active' : ''}" 
+                    style="${task.status === 'done' ? 'text-decoration: line-through; opacity: 0.7;' : ''}">
+                ${task.status === 'done' ? '✓ ' : ''}${task.title} (${task.points}pt)
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+    
+    html += '<h3 style="margin-top: 16px;">Tasks by Energy Level</h3>';
+    
+    Object.entries(tasksByEnergy).forEach(([energy, energyTasks]) => {
+      if (energyTasks.length === 0) return;
+      
+      const completedTasks = energyTasks.filter(t => t.status === 'done');
+      const energyLabel = energy.charAt(0).toUpperCase() + energy.slice(1);
+      
+      html += `
+        <div class="card" style="margin-bottom: 8px;">
+          <h4 style="margin: 0 0 8px 0; color: var(--text);">
+            ${energyLabel} Energy 
+            <span class="chip">${completedTasks.length}/${energyTasks.length} done</span>
+          </h4>
+          <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+            ${energyTasks.map(task => `
+              <span class="chip ${task.status === 'done' ? 'active' : ''}"
+                    style="${task.status === 'done' ? 'text-decoration: line-through; opacity: 0.7;' : ''}">
+                ${task.status === 'done' ? '✓ ' : ''}${task.title} (${task.points}pt)
+              </span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    });
+    
+    container.innerHTML = html;
+    document.getElementById('tasks-by-tag-popup').classList.remove('hidden');
+  }
+  
+  function closeTasksByTagPopup() {
+    document.getElementById('tasks-by-tag-popup').classList.add('hidden');
+  }
+  
+  function openTaskTimelinePopup() {
+    const datePicker = document.getElementById('daily-date-picker');
+    const selectedDate = datePicker.value || PrismUtils.todayKey();
+    
+    const container = document.getElementById('task-timeline-popup-content');
+    
+    // Generate timeline content directly in popup
+    const tasks = loadTasks();
+    const progressData = PrismUtils.ensureDay('progress', selectedDate);
+    const sessions = progressData.sessions || [];
+    
+    if (sessions.length === 0) {
+      container.innerHTML = '<div class="info-text">No completed tasks yet today.</div>';
+    } else {
+      const sortedSessions = sessions.sort((a, b) => {
+        const timeA = new Date(a.completedAt || a.endedAt);
+        const timeB = new Date(b.completedAt || b.endedAt);
+        return timeA - timeB;
+      });
+      
+      let html = '';
+      sortedSessions.forEach(session => {
+        const task = tasks.find(t => t.id === session.taskId);
+        const completionTime = new Date(session.completedAt || session.endedAt);
+        const timeStr = completionTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        html += `
+          <div class="card" style="margin-bottom: 8px;">
+            <div class="flex flex-between">
+              <div style="flex: 1;">
+                <strong>${task ? task.title : 'Unknown Task'}</strong>
+                <div class="muted" style="font-size: 12px; margin-top: 2px;">
+                  ${timeStr} • ${session.pointsEarned || 0} points
+                  ${session.method ? ` • via ${session.method}` : ''}
+                </div>
+              </div>
+              <div class="task-points" style="background: var(--pri);">
+                ${session.pointsEarned || 0}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+    
+    document.getElementById('task-timeline-popup').classList.remove('hidden');
+  }
+  
+  function closeTaskTimelinePopup() {
+    document.getElementById('task-timeline-popup').classList.add('hidden');
+  }
+
+  /* ===== Settings ===== */
+  function openSettings() {
+    loadSettings();
+    document.getElementById('settings-modal').classList.remove('hidden');
+  }
+
+  function closeSettings() {
+    document.getElementById('settings-modal').classList.add('hidden');
+  }
+
+  function loadSettings() {
+    const settings = JSON.parse(localStorage.getItem('prism.settings') || '{}');
+    document.getElementById('settings-points-goal').value = settings.dailyPointsGoal || 24;
+    document.getElementById('settings-hourly-goal').value = settings.hourlyPointsGoal || 6;
+    document.getElementById('settings-chant-goal').value = settings.dailyChantGoal || 108;
+    document.getElementById('settings-work-duration').value = settings.workDuration || 30;
+    document.getElementById('settings-reflection-duration').value = settings.reflectionDuration || 5;
+    document.getElementById('settings-break-duration').value = settings.breakDuration || 10;
+    document.getElementById('settings-daily-steps').value = settings.dailyStepsGoal || 10000;
+    document.getElementById('settings-hourly-steps').value = settings.hourlyStepsTarget || 800;
+  }
+
+  function saveSettings() {
+    const settings = {
+      dailyPointsGoal: parseInt(document.getElementById('settings-points-goal').value),
+      hourlyPointsGoal: parseInt(document.getElementById('settings-hourly-goal').value),
+      dailyChantGoal: parseInt(document.getElementById('settings-chant-goal').value),
+      workDuration: parseInt(document.getElementById('settings-work-duration').value),
+      reflectionDuration: parseInt(document.getElementById('settings-reflection-duration').value),
+      breakDuration: parseInt(document.getElementById('settings-break-duration').value),
+      dailyStepsGoal: parseInt(document.getElementById('settings-daily-steps').value),
+      hourlyStepsTarget: parseInt(document.getElementById('settings-hourly-steps').value)
+    };
+    
+    localStorage.setItem('prism.settings', JSON.stringify(settings));
+    
+    // Update current day data with new goals
+    const todayKey = PrismUtils.todayKey();
+    const { ymStr } = PrismUtils.currentYearMonth();
+    
+    // Update progress data
+    const progressData = PrismUtils.loadMonth('progress', ymStr);
+    if (progressData.days[todayKey]) {
+      progressData.days[todayKey].dailyPointsGoal = settings.dailyPointsGoal;
+      PrismUtils.saveMonth('progress', ymStr, progressData);
+    } else {
+    PrismUtils.ensureDay('progress', todayKey, { dailyPointsGoal: settings.dailyPointsGoal });
+    }
+    
+    // Update chant data
+    const chantData = PrismUtils.loadMonth('chants', ymStr);
+    if (chantData.days[todayKey]) {
+      chantData.days[todayKey].dailyChantGoal = settings.dailyChantGoal;
+      PrismUtils.saveMonth('chants', ymStr, chantData);
+    } else {
+    PrismUtils.ensureDay('chants', todayKey, { dailyChantGoal: settings.dailyChantGoal });
+    }
+    
+    closeSettings();
+    
+    // Refresh all relevant views
+    if (currentTab === 'tasks') {
+    refreshTasks();
+    } else if (currentTab === 'chant') {
+      updateChantSummary();
+    } else if (currentTab === 'daily') {
+      refreshDailyView();
+    }
+    
+    showToast('Settings saved and synced across all views!');
+  }
+
+  function exportData() {
+    const { ymStr } = PrismUtils.currentYearMonth();
+    const exportData = {
+      chants: PrismUtils.loadMonth('chants', ymStr),
+      tasks: PrismUtils.loadMonth('tasks', ymStr),
+      progress: PrismUtils.loadMonth('progress', ymStr),
+      hourly: PrismUtils.loadMonth('hourly', ymStr),
+      settings: JSON.parse(localStorage.getItem('prism.settings') || '{}'),
+      exportedAt: PrismUtils.nowISO()
+    };
+    
+    document.getElementById('settings-data').value = JSON.stringify(exportData, null, 2);
+  }
+
+  function importData() {
+    try {
+      const data = JSON.parse(document.getElementById('settings-data').value);
+      const { ymStr } = PrismUtils.currentYearMonth();
+      
+      if (data.chants) PrismUtils.saveMonth('chants', ymStr, data.chants);
+      if (data.tasks) PrismUtils.saveMonth('tasks', ymStr, data.tasks);
+      if (data.progress) PrismUtils.saveMonth('progress', ymStr, data.progress);
+      if (data.hourly) PrismUtils.saveMonth('hourly', ymStr, data.hourly);
+      if (data.settings) localStorage.setItem('prism.settings', JSON.stringify(data.settings));
+      
+      showToast('Data imported successfully!');
+      refreshTasks();
+      if (currentTab === 'chant') updateChantSummary();
+    } catch (e) {
+      showToast('Error importing data. Please check the format.');
+    }
+  }
+
+  /* ===== Toast Notifications ===== */
+  function showToast(message, duration = 3000) {
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.textContent = message;
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        document.body.removeChild(toast);
+      }
+    }, duration);
+  }
+
+  /* ===== Initialization ===== */
+  (function init() {
+    // Migrate existing tasks to add completedPoints field
+    const tasks = loadTasks();
+    let migrationNeeded = false;
+    tasks.forEach(task => {
+      if (task.completedPoints === undefined) {
+        task.completedPoints = 0;
+        migrationNeeded = true;
+      }
+    });
+    if (migrationNeeded) {
+      saveTasks(tasks);
+    }
+    
+    // Initialize current date to today
+    const initTodayKey = PrismUtils.todayKey();
+    setCurrentDate(initTodayKey);
+    
+    // Load last tab or default to tasks
+    const lastTab = localStorage.getItem('prism.lastTab') || 'tasks';
+    
+    // Set initial tab state
+    if (lastTab === 'chant') {
+      document.querySelectorAll('.tab-btn')[1].classList.add('active');
+      document.querySelectorAll('.tab-btn')[0].classList.remove('active');
+      document.getElementById('tab-tasks').classList.add('hidden');
+      document.getElementById('tab-chant').classList.remove('hidden');
+      currentTab = 'chant';
+      refreshChantTab();
+    } else if (lastTab === 'hourly') {
+      document.querySelectorAll('.tab-btn')[2].classList.add('active');
+      document.querySelectorAll('.tab-btn')[0].classList.remove('active');
+      document.getElementById('tab-tasks').classList.add('hidden');
+      document.getElementById('tab-hourly').classList.remove('hidden');
+      currentTab = 'hourly';
+      refreshHourlyTab();
+    } else if (lastTab === 'daily') {
+      document.querySelectorAll('.tab-btn')[3].classList.add('active');
+      document.querySelectorAll('.tab-btn')[0].classList.remove('active');
+      document.getElementById('tab-tasks').classList.add('hidden');
+      document.getElementById('tab-daily').classList.remove('hidden');
+      currentTab = 'daily';
+      refreshDailyTab();
+    } else {
+      currentTab = 'tasks';
+      refreshTasks();
+    }
+    
+    // Initialize month picker for chant stats
+    const { ymStr } = PrismUtils.currentYearMonth();
+    document.getElementById('chant-month-picker').value = ymStr;
+    
+    // Ensure today's data exists
+    const settings = JSON.parse(localStorage.getItem('prism.settings') || '{}');
+    
+    PrismUtils.ensureDay('progress', initTodayKey, {
+      dailyPointsGoal: settings.dailyPointsGoal || 24
+    });
+    
+    PrismUtils.ensureDay('chants', initTodayKey, {
+      dailyChantGoal: settings.dailyChantGoal || 108
+    });
+    
+    PrismUtils.ensureDay('hourly', initTodayKey);
+    
+    console.log('PRISM initialized');
+  })();
+
+  /* legacy: mantra counter */
+  // Original functions preserved for reference:
+  /*
+  const MANTRA_KEY = 'gayathri';
+  function pad(n){return (n<10?'0':'')+n;}
+  function monthStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1);}
+  function dayStr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());}
+  function storageKey(mKey){return MANTRA_KEY+'-'+mKey;}
+  */
+</script>
+</body>
+</html>

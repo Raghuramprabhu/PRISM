@@ -88,12 +88,23 @@
     .tab-icon { font-size: 18px; margin-bottom: 2px; }
     
     /* Settings Gear */
-    .settings-btn {
+    .settings-btn { 
       position: fixed; top: 12px; right: 12px; background: var(--card);
       border: 1px solid var(--line); border-radius: 50%; width: 40px; height: 40px;
       color: var(--muted); cursor: pointer; font-size: 16px; z-index: 5;
     }
     .settings-btn:focus { outline: 2px solid #93c5fd; }
+
+    .mic-button {
+      position: fixed; right: 16px; bottom: 96px; width: 56px; height: 56px;
+      border-radius: 50%; border: none; background: #f97316; color: #fff;
+      font-size: 24px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35); cursor: pointer; z-index: 12;
+      touch-action: manipulation; user-select: none;
+    }
+    .mic-button:focus { outline: 2px solid #93c5fd; outline-offset: 2px; }
+    .mic-button:active { transform: scale(0.96); }
+    .mic-button.listening { background: #ef4444; }
     
     /* Modal/Drawer Overlay */
     .modal-overlay {
@@ -862,7 +873,11 @@
       <div>Daily</div>
     </button>
   </div>
-  
+
+  <button id="voice-command-button" type="button" class="mic-button" aria-label="Voice command">
+    🎤
+  </button>
+
   <!-- Task Modal -->
   <div id="task-modal" class="modal-overlay hidden">
     <div class="modal">
@@ -3994,12 +4009,558 @@ function startMotionDetection() {
     toast.className = 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
       if (document.body.contains(toast)) {
         document.body.removeChild(toast);
       }
     }, duration);
+  }
+
+  /* ===== Voice Command Recognition ===== */
+  const VOICE_COMMANDS = [
+    {
+      target: 'add task',
+      variants: ['add task', 'add tasks', 'add new task', 'add another task', 'add the task', 'please add task']
+    },
+    {
+      target: 'end task',
+      variants: ['end task', 'end tasks', 'end the task', 'finish task', 'finish the task', 'stop task']
+    },
+    {
+      target: 'start walking session',
+      variants: [
+        'start walking session',
+        'start walk session',
+        'start walking',
+        'start my walk session',
+        'start my walking session',
+        'start walking walking session'
+      ]
+    }
+  ];
+
+  VOICE_COMMANDS.forEach(command => {
+    command.normalizedVariants = command.variants.map(variant => baseNormalize(variant));
+  });
+
+  function baseNormalize(text) {
+    return (text || '')
+      .toLowerCase()
+      .replace(/[“”"'`]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalizeTranscript(text) {
+    let cleaned = baseNormalize(text);
+    if (!cleaned) return '';
+
+    cleaned = cleaned
+      .replace(/\b(can you|could you|would you|please|hey|hi|okay|ok|kindly)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!cleaned) return '';
+
+    const parts = cleaned.split(' ');
+    const deduped = [];
+    for (const part of parts) {
+      if (!deduped.length || deduped[deduped.length - 1] !== part) {
+        deduped.push(part);
+      }
+    }
+
+    return baseNormalize(deduped.join(' '));
+  }
+
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    if (!a) return b.length;
+    if (!b) return a.length;
+
+    const lenA = a.length;
+    const lenB = b.length;
+    let prev = new Array(lenB + 1);
+    let curr = new Array(lenB + 1);
+
+    for (let j = 0; j <= lenB; j++) {
+      prev[j] = j;
+    }
+
+    for (let i = 1; i <= lenA; i++) {
+      curr[0] = i;
+      const charA = a.charCodeAt(i - 1);
+      for (let j = 1; j <= lenB; j++) {
+        const cost = charA === b.charCodeAt(j - 1) ? 0 : 1;
+        const deletion = prev[j] + 1;
+        const insertion = curr[j - 1] + 1;
+        const substitution = prev[j - 1] + cost;
+        curr[j] = Math.min(deletion, insertion, substitution);
+      }
+      const temp = prev;
+      prev = curr;
+      curr = temp;
+    }
+
+    return prev[lenB];
+  }
+
+  function findBestCommandMatch(input) {
+    let bestMatch = null;
+
+    for (const command of VOICE_COMMANDS) {
+      command.normalizedVariants.forEach(variant => {
+        const distance = levenshtein(input, variant);
+        const referenceLength = Math.max(variant.length, input.length);
+        const allowedDistance = Math.max(2, Math.ceil(referenceLength * 0.35));
+
+        if (distance <= allowedDistance) {
+          if (!bestMatch || distance < bestMatch.distance) {
+            bestMatch = { target: command.target, distance };
+          }
+        }
+      });
+    }
+
+    return bestMatch;
+  }
+
+  function vibratePattern(pattern) {
+    try {
+      if (navigator && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch (err) {
+      // Ignore vibration errors silently for unsupported devices
+    }
+  }
+
+  function vibrateSuccess() {
+    vibratePattern(50);
+  }
+
+  function vibrateFailure() {
+    vibratePattern([50, 80, 50, 80, 50]);
+  }
+
+  function interpretVoiceCandidates(candidates) {
+    const normalizedInputs = [];
+    candidates.forEach(candidate => {
+      const normalized = normalizeTranscript(candidate);
+      if (normalized) {
+        normalizedInputs.push(normalized);
+      }
+    });
+
+    if (!normalizedInputs.length) {
+      vibrateFailure();
+      alert("Sorry, couldn't find the command.");
+      return false;
+    }
+
+    let bestMatch = null;
+    normalizedInputs.forEach(input => {
+      const match = findBestCommandMatch(input);
+      if (match && (!bestMatch || match.distance < bestMatch.distance)) {
+        bestMatch = match;
+      }
+    });
+
+    if (bestMatch) {
+      vibrateSuccess();
+      alert(`Identified command: ${bestMatch.target}`);
+      return true;
+    }
+
+    vibrateFailure();
+    alert("Sorry, couldn't find the command.");
+    return false;
+  }
+
+  function toggleVoiceButtonListening(state) {
+    const button = document.getElementById('voice-command-button');
+    if (button) {
+      button.classList.toggle('listening', Boolean(state));
+    }
+  }
+
+  function promptForCommand() {
+    toggleVoiceButtonListening(false);
+    const typed = prompt('Enter command');
+    if (typed !== null) {
+      interpretVoiceCandidates([typed]);
+    }
+  }
+
+  const VoiceController = (() => {
+    const SILENCE_MS = 3000;
+    let activeSession = null;
+
+    function resetSilenceTimer(session) {
+      if (!session) return;
+      session.lastSpeechAt = Date.now();
+      if (session.silenceTimer) {
+        clearTimeout(session.silenceTimer);
+      }
+      session.silenceTimer = setTimeout(() => finalizeSession(session), SILENCE_MS);
+    }
+
+    function cleanupSession(session, skipInterpret = false) {
+      if (!session) return;
+      if (session.silenceTimer) clearTimeout(session.silenceTimer);
+      if (session.vadInterval) clearInterval(session.vadInterval);
+      if (session.vadRaf) cancelAnimationFrame(session.vadRaf);
+
+      if (session.mode === 'droid' && session.rec) {
+        try { session.rec.Stop(); } catch (err) { /* ignore */ }
+      }
+
+      if (session.mode === 'web' && session.recognition) {
+        session.recognition.onend = null;
+        session.recognition.onresult = null;
+        session.recognition.onerror = null;
+        try { session.recognition.stop(); } catch (err) { /* ignore */ }
+      }
+
+      if ((session.mode === 'web' || session.mode === 'vadPrompt') && session.stream) {
+        try {
+          session.stream.getTracks().forEach(track => track.stop());
+        } catch (err) { /* ignore */ }
+      }
+
+      if ((session.mode === 'web' || session.mode === 'vadPrompt') && session.audioCtx) {
+        try { session.audioCtx.close(); } catch (err) { /* ignore */ }
+      }
+
+      toggleVoiceButtonListening(false);
+      if (!skipInterpret) {
+        const transcripts = session.transcripts ? session.transcripts.slice() : [];
+        if (!transcripts.length && session.lastInterim) {
+          transcripts.push(session.lastInterim);
+        }
+
+        if (session.mode === 'vadPrompt') {
+          promptForCommand();
+        } else {
+          interpretVoiceCandidates(transcripts);
+        }
+      }
+    }
+
+    function finalizeSession(session) {
+      if (!activeSession || session !== activeSession || session.finalizing) {
+        return;
+      }
+      session.finalizing = true;
+      const currentSession = activeSession;
+      activeSession = null;
+      cleanupSession(currentSession);
+    }
+
+    function abortSession(session) {
+      if (!activeSession || session !== activeSession) {
+        return;
+      }
+      activeSession = null;
+      cleanupSession(session, true);
+    }
+
+    function ensureAnalyserData(analyser) {
+      const supportsFloat = typeof analyser.getFloatTimeDomainData === 'function';
+      return {
+        supportsFloat,
+        buffer: supportsFloat ? new Float32Array(analyser.fftSize) : new Uint8Array(analyser.fftSize)
+      };
+    }
+
+    function monitorStream(session, analyser, dataObj) {
+      const threshold = 0.015;
+
+      const loop = () => {
+        if (!activeSession || session !== activeSession || session.finalizing) {
+          return;
+        }
+
+        let rms = 0;
+        if (dataObj.supportsFloat) {
+          analyser.getFloatTimeDomainData(dataObj.buffer);
+          let sumSquares = 0;
+          for (let i = 0; i < dataObj.buffer.length; i++) {
+            const sample = dataObj.buffer[i];
+            sumSquares += sample * sample;
+          }
+          rms = Math.sqrt(sumSquares / dataObj.buffer.length);
+        } else {
+          analyser.getByteTimeDomainData(dataObj.buffer);
+          let sumSquares = 0;
+          for (let i = 0; i < dataObj.buffer.length; i++) {
+            const centered = (dataObj.buffer[i] - 128) / 128;
+            sumSquares += centered * centered;
+          }
+          rms = Math.sqrt(sumSquares / dataObj.buffer.length);
+        }
+
+        if (rms > threshold) {
+          resetSilenceTimer(session);
+        }
+
+        session.vadRaf = requestAnimationFrame(loop);
+      };
+
+      loop();
+    }
+
+    function startDroidSession() {
+      if (!window.app || typeof app.CreateSpeechRec !== 'function') {
+        return false;
+      }
+
+      let rec;
+      try {
+        rec = app.CreateSpeechRec();
+      } catch (err) {
+        return false;
+      }
+
+      if (!rec) {
+        return false;
+      }
+
+      const session = {
+        mode: 'droid',
+        transcripts: [],
+        lastInterim: ''
+      };
+
+      activeSession = session;
+      toggleVoiceButtonListening(true);
+
+      try {
+        rec.SetOnResult(result => {
+          if (!activeSession || session !== activeSession) {
+            return;
+          }
+
+          const collected = [];
+          if (Array.isArray(result)) {
+            collected.push(...result);
+          } else if (typeof result === 'string') {
+            collected.push(result);
+          }
+
+          collected.forEach(text => {
+            if (text) {
+              session.transcripts.push(text);
+            }
+          });
+
+          resetSilenceTimer(session);
+        });
+      } catch (err) {
+        abortSession(session);
+        return false;
+      }
+
+      try {
+        if (typeof rec.SetOnError === 'function') {
+          rec.SetOnError(() => finalizeSession(session));
+        }
+      } catch (err) {
+        // ignore SetOnError wiring issues
+      }
+
+      if (typeof rec.IsListening === 'function') {
+        session.vadInterval = setInterval(() => {
+          try {
+            const listening = rec.IsListening();
+            if (listening && !session.pollIndicatedSpeech) {
+              session.pollIndicatedSpeech = true;
+              resetSilenceTimer(session);
+            } else if (!listening) {
+              session.pollIndicatedSpeech = false;
+            }
+          } catch (err) {
+            // ignore polling issues
+          }
+        }, 400);
+      }
+
+      session.rec = rec;
+      resetSilenceTimer(session);
+
+      try {
+        rec.Listen();
+      } catch (err) {
+        abortSession(session);
+        return false;
+      }
+
+      return true;
+    }
+
+    function startWebSession() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        return false;
+      }
+
+      let recognition;
+      try {
+        recognition = new SpeechRecognition();
+      } catch (err) {
+        return false;
+      }
+
+      const session = {
+        mode: 'web',
+        transcripts: [],
+        lastInterim: ''
+      };
+
+      activeSession = session;
+      toggleVoiceButtonListening(true);
+
+      recognition.lang = 'en-US';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = event => {
+        if (!activeSession || session !== activeSession || session.finalizing) {
+          return;
+        }
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const transcript = result[0] && result[0].transcript ? result[0].transcript : '';
+          if (!transcript) continue;
+
+          if (result.isFinal) {
+            session.transcripts.push(transcript);
+            session.lastInterim = '';
+          } else {
+            session.lastInterim = transcript;
+          }
+        }
+
+        resetSilenceTimer(session);
+      };
+
+      recognition.onerror = () => finalizeSession(session);
+      recognition.onnomatch = () => finalizeSession(session);
+      recognition.onend = () => finalizeSession(session);
+
+      try {
+        recognition.start();
+      } catch (err) {
+        abortSession(session);
+        return false;
+      }
+
+      session.recognition = recognition;
+      resetSilenceTimer(session);
+
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          if (!activeSession || session !== activeSession || session.finalizing) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+          }
+
+          session.stream = stream;
+
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) {
+            resetSilenceTimer(session);
+            return;
+          }
+
+          const audioCtx = new AudioContext();
+          session.audioCtx = audioCtx;
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 2048;
+          source.connect(analyser);
+
+          const dataObj = ensureAnalyserData(analyser);
+          resetSilenceTimer(session);
+          monitorStream(session, analyser, dataObj);
+        }).catch(() => finalizeSession(session));
+      }
+
+      return true;
+    }
+
+    function startVadPromptSession() {
+      if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        promptForCommand();
+        return true;
+      }
+
+      const session = {
+        mode: 'vadPrompt',
+        transcripts: [],
+        lastInterim: ''
+      };
+
+      activeSession = session;
+      toggleVoiceButtonListening(true);
+      resetSilenceTimer(session);
+
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        if (!activeSession || session !== activeSession || session.finalizing) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        session.stream = stream;
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) {
+          return;
+        }
+
+        const audioCtx = new AudioContext();
+        session.audioCtx = audioCtx;
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+
+        const dataObj = ensureAnalyserData(analyser);
+        monitorStream(session, analyser, dataObj);
+      }).catch(() => {
+        abortSession(session);
+        promptForCommand();
+      });
+
+      return true;
+    }
+
+    function startListening() {
+      if (activeSession) {
+        return;
+      }
+
+      if (startDroidSession()) {
+        return;
+      }
+
+      if (startWebSession()) {
+        return;
+      }
+
+      startVadPromptSession();
+    }
+
+    return { startListening };
+  })();
+
+  const voiceButton = document.getElementById('voice-command-button');
+  if (voiceButton) {
+    voiceButton.addEventListener('click', () => VoiceController.startListening());
   }
 
   /* ===== Initialization ===== */

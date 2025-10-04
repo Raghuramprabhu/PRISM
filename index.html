@@ -4033,6 +4033,8 @@ function startMotionDetection() {
         'start walking session',
         'start walk session',
         'start walking',
+        'walking',
+        'walk',
         'start my walk session',
         'start my walking session',
         'start walking walking session'
@@ -4127,10 +4129,31 @@ function startMotionDetection() {
     return bestMatch;
   }
 
-  function vibratePattern(pattern) {
+  function vibratePattern(patternConfig) {
+    const config = typeof patternConfig === 'object' && patternConfig !== null
+      ? patternConfig
+      : { dsValue: patternConfig, navValue: patternConfig };
+    const dsValue = config.dsValue;
+    const navValue = Object.prototype.hasOwnProperty.call(config, 'navValue')
+      ? config.navValue
+      : config.dsValue;
+
+    const tryVibrate = (scope) => {
+      if (!scope || typeof scope.Vibrate !== 'function') return false;
+      try {
+        scope.Vibrate(dsValue);
+        return true;
+      } catch (err) {
+        return false;
+      }
+    };
+
+    if (typeof app !== 'undefined' && tryVibrate(app)) return;
+    if (typeof gfx !== 'undefined' && tryVibrate(gfx)) return;
+
     try {
-      if (navigator && typeof navigator.vibrate === 'function') {
-        navigator.vibrate(pattern);
+      if (typeof navigator !== 'undefined' && navigator && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(navValue);
       }
     } catch (err) {
       // Ignore vibration errors silently for unsupported devices
@@ -4138,11 +4161,11 @@ function startMotionDetection() {
   }
 
   function vibrateSuccess() {
-    vibratePattern(50);
+    vibratePattern({ dsValue: 50, navValue: 50 });
   }
 
   function vibrateFailure() {
-    vibratePattern([50, 80, 50, 80, 50]);
+    vibratePattern({ dsValue: '50,80,50,80,50', navValue: [50, 80, 50, 80, 50] });
   }
 
   function interpretVoiceCandidates(candidates) {

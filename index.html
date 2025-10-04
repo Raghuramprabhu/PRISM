@@ -2410,74 +2410,59 @@
     }
   }
 
-function startMotionDetection() {
-    // --- START: Pedometer Accuracy Improvements ---
+  function startMotionDetection() {
+    const MIN_STEP_INTERVAL = 250;   // Fastest reasonable cadence (4 steps/sec)
+    const MAX_STEP_INTERVAL = 2500;  // Slowest reasonable cadence (0.4 steps/sec)
+    const THRESHOLD = 1.2;           // Linear acceleration threshold to consider movement (m/s^2)
+    const RESET_THRESHOLD = 0.3;     // Drop required before we can detect another peak
+    const GRAVITY_ALPHA = 0.9;       // Low-pass filter for gravity magnitude
+    const GROUP_SIZE = 7;            // Require this many raw detections before counting a step
 
-    // Constants for the step detection algorithm.
-    const SENSITIVITY = 0.6;       // Acceleration magnitude threshold to detect a potential peak.
-    const HIGH_PASS_ALPHA = 0.8;    // Filter coefficient to remove the constant force of gravity.
-    const MIN_STEP_INTERVAL = 250;  // 250ms = Max 4 steps/sec (240 steps per minute).
-    const MAX_STEP_INTERVAL = 2000; // 2000ms = Min 0.5 steps/sec (30 steps per minute).
+    let gravityMagnitude = 9.81;     // Start near Earth's gravity
+    let peakArmed = false;           // True when we have crossed the threshold and await the drop
+    let lastPeakTime = 0;            // Timestamp of the last raw detection
+    let rawStepBuffer = 0;           // Number of raw detections since last recorded step
 
-    // State variables that reset for each walking session.
-    let gravity = [0, 0, 0];      // Stores the filtered gravity component.
-    let lastMagnitude = 0;        // Stores the last computed acceleration magnitude.
-    let peakDetected = false;      // Tracks if we are on the upward slope of a potential step.
-    let lastStepTime = 0;          // Timestamp of the last valid step.
+    stepCounterSensor = (event) => {
+      if (!stepCounterActive) return;
 
-    stepCounterSensor = (event) => {
-      if (!stepCounterActive) return;
+      const acceleration = event.accelerationIncludingGravity;
+      if (!acceleration) return;
 
-      const acceleration = event.accelerationIncludingGravity;
-      if (!acceleration || !acceleration.x) return;
+      const ax = Number(acceleration.x) || 0;
+      const ay = Number(acceleration.y) || 0;
+      const az = Number(acceleration.z) || 0;
 
-      // 1. Apply a High-Pass Filter to isolate movement from gravity.
-      // This estimates the gravity vector and subtracts it from the raw sensor data,
-      // leaving only the "linear acceleration" caused by the user's movement.
-      gravity[0] = HIGH_PASS_ALPHA * gravity[0] + (1 - HIGH_PASS_ALPHA) * acceleration.x;
-      gravity[1] = HIGH_PASS_ALPHA * gravity[1] + (1 - HIGH_PASS_ALPHA) * acceleration.y;
-      gravity[2] = HIGH_PASS_ALPHA * gravity[2] + (1 - HIGH_PASS_ALPHA) * acceleration.z;
+      const magnitude = Math.sqrt(ax * ax + ay * ay + az * az);
+      gravityMagnitude = GRAVITY_ALPHA * gravityMagnitude + (1 - GRAVITY_ALPHA) * magnitude;
+      const linearAccel = magnitude - gravityMagnitude;
 
-      const linearAccel = {
-        x: acceleration.x - gravity[0],
-        y: acceleration.y - gravity[1],
-        z: acceleration.z - gravity[2]
-      };
+      const now = Date.now();
 
-      // 2. Calculate the magnitude of the linear acceleration vector.
-      const currentMagnitude = Math.sqrt(linearAccel.x ** 2 + linearAccel.y ** 2 + linearAccel.z ** 2);
+      if (!peakArmed && linearAccel > THRESHOLD) {
+        peakArmed = true;
+      }
 
-      // 3. Implement Peak Detection Logic.
-      // A step is counted when the acceleration magnitude forms a peak. We detect this by:
-      // a) Waiting for the magnitude to rise above our SENSITIVITY threshold (peakDetected = true).
-      // b) Then, waiting for it to fall below the previous magnitude (we've passed the peak).
-      const now = Date.now();
-      if (peakDetected && currentMagnitude < lastMagnitude) {
-        // A peak has just occurred. Now, validate it.
-        const timeSinceLastStep = now - lastStepTime;
+      if (peakArmed && linearAccel < RESET_THRESHOLD) {
+        peakArmed = false;
 
-        // 4. Apply Time Thresholds to filter out false positives.
-        // The time between steps must be within a reasonable range for walking/running.
-        if (timeSinceLastStep > MIN_STEP_INTERVAL && timeSinceLastStep < MAX_STEP_INTERVAL) {
-          recordStep();
-          lastStepTime = now;
-        }
-        peakDetected = false; // Reset for the next peak.
-      }
+        const interval = now - lastPeakTime;
+        if (interval >= MIN_STEP_INTERVAL && interval <= MAX_STEP_INTERVAL) {
+          rawStepBuffer++;
+          if (rawStepBuffer >= GROUP_SIZE) {
+            recordStep();
+            rawStepBuffer = 0;
+          }
+        } else if (interval > MAX_STEP_INTERVAL) {
+          rawStepBuffer = 0;
+        }
 
-      // If magnitude is rising and passes the sensitivity threshold, we may be approaching a peak.
-      if (currentMagnitude > lastMagnitude && currentMagnitude > SENSITIVITY) {
-        peakDetected = true;
-      }
+        lastPeakTime = now;
+      }
+    };
 
-      // Store the current magnitude for the next comparison.
-      lastMagnitude = currentMagnitude;
-    };
-
-    // --- END: Pedometer Accuracy Improvements ---
-
-    window.addEventListener('devicemotion', stepCounterSensor);
-  }
+    window.addEventListener('devicemotion', stepCounterSensor, { passive: true });
+  }
 
   function startManualStepCounting() {
     // Add manual step counting button for devices without motion sensors

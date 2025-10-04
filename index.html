@@ -88,12 +88,23 @@
     .tab-icon { font-size: 18px; margin-bottom: 2px; }
     
     /* Settings Gear */
-    .settings-btn {
+    .settings-btn { 
       position: fixed; top: 12px; right: 12px; background: var(--card);
       border: 1px solid var(--line); border-radius: 50%; width: 40px; height: 40px;
       color: var(--muted); cursor: pointer; font-size: 16px; z-index: 5;
     }
     .settings-btn:focus { outline: 2px solid #93c5fd; }
+
+    .mic-button {
+      position: fixed; right: 16px; bottom: 96px; width: 56px; height: 56px;
+      border-radius: 50%; border: none; background: #f97316; color: #fff;
+      font-size: 24px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35); cursor: pointer; z-index: 12;
+      touch-action: manipulation; user-select: none;
+    }
+    .mic-button:focus { outline: 2px solid #93c5fd; outline-offset: 2px; }
+    .mic-button:active { transform: scale(0.96); }
+    .mic-button.listening { background: #ef4444; }
     
     /* Modal/Drawer Overlay */
     .modal-overlay {
@@ -862,7 +873,11 @@
       <div>Daily</div>
     </button>
   </div>
-  
+
+  <button id="voice-command-button" type="button" class="mic-button" aria-label="Voice command">
+    🎤
+  </button>
+
   <!-- Task Modal -->
   <div id="task-modal" class="modal-overlay hidden">
     <div class="modal">
@@ -3994,12 +4009,255 @@ function startMotionDetection() {
     toast.className = 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
       if (document.body.contains(toast)) {
         document.body.removeChild(toast);
       }
     }, duration);
+  }
+
+  /* ===== Voice Command Recognition ===== */
+  const VOICE_COMMANDS = [
+    {
+      target: 'add task',
+      variants: ['add task', 'add tasks', 'add new task', 'add another task', 'add the task', 'please add task']
+    },
+    {
+      target: 'end task',
+      variants: ['end task', 'end tasks', 'end the task', 'finish task', 'finish the task', 'stop task']
+    },
+    {
+      target: 'start walking session',
+      variants: [
+        'start walking session',
+        'start walk session',
+        'start walking',
+        'start my walk session',
+        'start my walking session',
+        'start walking walking session'
+      ]
+    }
+  ];
+
+  VOICE_COMMANDS.forEach(command => {
+    command.normalizedVariants = command.variants.map(variant => baseNormalize(variant));
+  });
+
+  function baseNormalize(text) {
+    return (text || '')
+      .toLowerCase()
+      .replace(/[“”"'`]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalizeTranscript(text) {
+    let cleaned = baseNormalize(text);
+    if (!cleaned) return '';
+
+    cleaned = cleaned
+      .replace(/\b(can you|could you|would you|please|hey|hi|okay|ok|kindly)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!cleaned) return '';
+
+    const parts = cleaned.split(' ');
+    const deduped = [];
+    for (const part of parts) {
+      if (!deduped.length || deduped[deduped.length - 1] !== part) {
+        deduped.push(part);
+      }
+    }
+
+    return baseNormalize(deduped.join(' '));
+  }
+
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    if (!a) return b.length;
+    if (!b) return a.length;
+
+    const lenA = a.length;
+    const lenB = b.length;
+    let prev = new Array(lenB + 1);
+    let curr = new Array(lenB + 1);
+
+    for (let j = 0; j <= lenB; j++) {
+      prev[j] = j;
+    }
+
+    for (let i = 1; i <= lenA; i++) {
+      curr[0] = i;
+      const charA = a.charCodeAt(i - 1);
+      for (let j = 1; j <= lenB; j++) {
+        const cost = charA === b.charCodeAt(j - 1) ? 0 : 1;
+        const deletion = prev[j] + 1;
+        const insertion = curr[j - 1] + 1;
+        const substitution = prev[j - 1] + cost;
+        curr[j] = Math.min(deletion, insertion, substitution);
+      }
+      const temp = prev;
+      prev = curr;
+      curr = temp;
+    }
+
+    return prev[lenB];
+  }
+
+  function findBestCommandMatch(input) {
+    let bestMatch = null;
+
+    for (const command of VOICE_COMMANDS) {
+      command.normalizedVariants.forEach(variant => {
+        const distance = levenshtein(input, variant);
+        const referenceLength = Math.max(variant.length, input.length);
+        const allowedDistance = Math.max(2, Math.ceil(referenceLength * 0.35));
+
+        if (distance <= allowedDistance) {
+          if (!bestMatch || distance < bestMatch.distance) {
+            bestMatch = { target: command.target, distance };
+          }
+        }
+      });
+    }
+
+    return bestMatch;
+  }
+
+  function vibratePattern(pattern) {
+    try {
+      if (navigator && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(pattern);
+      }
+    } catch (err) {
+      // Ignore vibration errors silently for unsupported devices
+    }
+  }
+
+  function vibrateSuccess() {
+    vibratePattern(50);
+  }
+
+  function vibrateFailure() {
+    vibratePattern([50, 80, 50, 80, 50]);
+  }
+
+  function interpretVoiceCandidates(candidates) {
+    const normalizedInputs = [];
+    candidates.forEach(candidate => {
+      const normalized = normalizeTranscript(candidate);
+      if (normalized) {
+        normalizedInputs.push(normalized);
+      }
+    });
+
+    if (!normalizedInputs.length) {
+      vibrateFailure();
+      alert("Sorry, couldn't find the command.");
+      return false;
+    }
+
+    let bestMatch = null;
+    normalizedInputs.forEach(input => {
+      const match = findBestCommandMatch(input);
+      if (match && (!bestMatch || match.distance < bestMatch.distance)) {
+        bestMatch = match;
+      }
+    });
+
+    if (bestMatch) {
+      vibrateSuccess();
+      alert(`Identified command: ${bestMatch.target}`);
+      return true;
+    }
+
+    vibrateFailure();
+    alert("Sorry, couldn't find the command.");
+    return false;
+  }
+
+  function toggleVoiceButtonListening(state) {
+    const button = document.getElementById('voice-command-button');
+    if (button) {
+      button.classList.toggle('listening', Boolean(state));
+    }
+  }
+
+  function fallbackVoiceCommand() {
+    toggleVoiceButtonListening(false);
+    const typed = prompt('Enter command');
+    if (typed === null) {
+      return;
+    }
+    interpretVoiceCandidates([typed]);
+  }
+
+  function handleVoiceButtonTap() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      fallbackVoiceCommand();
+      return;
+    }
+
+    let recognition;
+    try {
+      recognition = new SpeechRecognition();
+    } catch (err) {
+      fallbackVoiceCommand();
+      return;
+    }
+
+    let handled = false;
+    let aborted = false;
+
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 5;
+
+    recognition.onstart = () => {
+      toggleVoiceButtonListening(true);
+    };
+
+    recognition.onresult = event => {
+      const transcripts = [];
+      for (let i = 0; i < event.results.length; i++) {
+        const result = event.results[i];
+        for (let j = 0; j < result.length; j++) {
+          transcripts.push(result[j].transcript);
+        }
+      }
+      handled = true;
+      interpretVoiceCandidates(transcripts);
+    };
+
+    recognition.onerror = () => {
+      aborted = true;
+      toggleVoiceButtonListening(false);
+      fallbackVoiceCommand();
+    };
+
+    recognition.onend = () => {
+      toggleVoiceButtonListening(false);
+      if (!handled && !aborted) {
+        interpretVoiceCandidates([]);
+      }
+    };
+
+    try {
+      recognition.start();
+    } catch (err) {
+      aborted = true;
+      toggleVoiceButtonListening(false);
+      fallbackVoiceCommand();
+    }
+  }
+
+  const voiceButton = document.getElementById('voice-command-button');
+  if (voiceButton) {
+    voiceButton.addEventListener('click', handleVoiceButtonTap);
   }
 
   /* ===== Initialization ===== */

@@ -2416,7 +2416,7 @@
     const THRESHOLD = 1.2;           // Linear acceleration threshold to consider movement (m/s^2)
     const RESET_THRESHOLD = 0.3;     // Drop required before we can detect another peak
     const GRAVITY_ALPHA = 0.9;       // Low-pass filter for gravity magnitude
-    const GROUP_SIZE = 7;            // Require this many raw detections before counting a step
+    const GROUP_SIZE = 2;            // Require this many raw detections before counting a step
 
     let gravityMagnitude = 9.81;     // Start near Earth's gravity
     let peakArmed = false;           // True when we have crossed the threshold and await the drop

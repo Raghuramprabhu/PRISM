@@ -88,12 +88,23 @@
     .tab-icon { font-size: 18px; margin-bottom: 2px; }
     
     /* Settings Gear */
-    .settings-btn {
+    .settings-btn { 
       position: fixed; top: 12px; right: 12px; background: var(--card);
       border: 1px solid var(--line); border-radius: 50%; width: 40px; height: 40px;
       color: var(--muted); cursor: pointer; font-size: 16px; z-index: 5;
     }
     .settings-btn:focus { outline: 2px solid #93c5fd; }
+
+    .mic-button {
+      position: fixed; right: 16px; bottom: 96px; width: 56px; height: 56px;
+      border-radius: 50%; border: none; background: #f97316; color: #fff;
+      font-size: 24px; display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 12px rgba(0, 0, 0, 0.35); cursor: pointer; z-index: 12;
+      touch-action: manipulation; user-select: none;
+    }
+    .mic-button:focus { outline: 2px solid #93c5fd; outline-offset: 2px; }
+    .mic-button:active { transform: scale(0.96); }
+    .mic-button.listening { background: #ef4444; }
     
     /* Modal/Drawer Overlay */
     .modal-overlay {
@@ -169,6 +180,73 @@
       background: var(--pri);
     }
     
+    /* Task Color Coding for Today's Tasks Popup */
+    .task-red {
+      background: linear-gradient(135deg, var(--card) 0%, #2d1a1a 100%);
+      border-color: #ef4444;
+    }
+    .task-orange {
+      background: linear-gradient(135deg, var(--card) 0%, #2d1f1a 100%);
+      border-color: #f97316;
+    }
+    .task-yellow {
+      background: linear-gradient(135deg, var(--card) 0%, #2d2a1a 100%);
+      border-color: #f59e0b;
+    }
+    .task-green {
+      background: linear-gradient(135deg, var(--card) 0%, #1a2d1a 100%);
+      border-color: #10b981;
+    }
+    .task-moved-from-past {
+      background: linear-gradient(135deg, #1a1a1a 0%, #0a0a0a 100%);
+      border-color: #6b7280 !important;
+      box-shadow: 0 0 8px rgba(107, 114, 128, 0.5);
+    }
+    .task-moved-from-past .task-title {
+      color: #fbbf24;
+    }
+    .task-clickable {
+      cursor: pointer;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+    .task-clickable:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+    .task-clickable:active {
+      transform: scale(0.98);
+    }
+    
+    /* Voice Field Highlighting */
+    .voice-field-highlight {
+      border: 2px solid #f59e0b !important;
+      background: rgba(245, 158, 11, 0.1) !important;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.3) !important;
+      animation: voicePulse 1s ease-in-out infinite alternate;
+    }
+    
+    @keyframes voicePulse {
+      from { box-shadow: 0 0 8px rgba(245, 158, 11, 0.3); }
+      to { box-shadow: 0 0 16px rgba(245, 158, 11, 0.6); }
+    }
+    
+    /* Voice Listening Icon */
+    .voice-listening-icon {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: #f59e0b;
+      font-size: 48px;
+      padding: 20px;
+      border-radius: 50%;
+      z-index: 1000;
+      display: none;
+      animation: voicePulse 1s ease-in-out infinite alternate;
+      box-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    }
+    
     /* Stepper */
     .stepper { display: flex; align-items: center; gap: 8px; }
     .stepper button {
@@ -239,6 +317,110 @@
       font-size: 14px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
     
+    /* Simple Timer Indicator */
+    .timer-indicator {
+      position: fixed; top: 15px; left: 15px; z-index: 30;
+      width: 50px; height: 70px; 
+      background: rgba(17, 24, 39, 0.9); backdrop-filter: blur(8px);
+      border: 2px solid rgba(99, 102, 241, 0.5);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.3s ease;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      border-radius: 8px; padding: 4px;
+    }
+    .timer-indicator:hover {
+      background: rgba(17, 24, 39, 1);
+      border-color: var(--accent);
+      transform: scale(1.05);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+    }
+    .timer-indicator.hidden {
+      display: none !important;
+    }
+    .timer-indicator.work {
+      border-color: #6366f1;
+    }
+    .timer-indicator.reflection {
+      border-color: #f59e0b;
+    }
+    .timer-indicator.break {
+      border-color: #10b981;
+    }
+    
+    /* Sandclock Progress Indicator */
+    .sandclock-container {
+      position: relative; width: 32px; height: 40px; margin-bottom: 2px;
+    }
+    .sandclock-bg {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 24px; color: rgba(255, 255, 255, 0.3);
+    }
+    .sandclock-progress {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; overflow: hidden;
+    }
+    .sandclock-fill {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, currentColor 0%, currentColor 100%);
+      transition: height 0.5s ease;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px;
+    }
+    .timer-indicator.work .sandclock-fill {
+      color: #6366f1;
+    }
+    .timer-indicator.reflection .sandclock-fill {
+      color: #f59e0b;
+    }
+    .timer-indicator.break .sandclock-fill {
+      color: #10b981;
+    }
+    .timer-indicator-time {
+      font-size: 8px; color: white; font-weight: bold;
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      text-align: center; line-height: 1;
+    }
+    
+    /* Large Sandclock for Focus Screen */
+    .focus-sandclock {
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+      margin: 20px 0;
+    }
+    .focus-sandclock-container {
+      position: relative; width: 120px; height: 150px;
+    }
+    .focus-sandclock-bg {
+      width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;
+      font-size: 100px; color: rgba(255, 255, 255, 0.2);
+    }
+    .focus-sandclock-progress {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 100px; overflow: hidden;
+    }
+    .focus-sandclock-fill {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      background: linear-gradient(to top, currentColor 0%, currentColor 100%);
+      transition: height 0.5s ease;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 100px;
+    }
+    .focus-sandclock.work .focus-sandclock-fill {
+      color: #6366f1;
+    }
+    .focus-sandclock.reflection .focus-sandclock-fill {
+      color: #f59e0b;
+    }
+    .focus-sandclock.break .focus-sandclock-fill {
+      color: #10b981;
+    }
+    .focus-timer-display {
+      font-size: 32px; font-weight: 700; color: var(--accent);
+      font-family: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+      text-align: center;
+    }
+    
     /* Focus Screen */
     .focus-container { padding: 20px 0; }
     .current-task {
@@ -254,11 +436,19 @@
     .hour-slot {
       background: var(--card); border: 1px solid var(--line); border-radius: 12px;
       padding: 12px; margin-bottom: 8px; display: flex; align-items: center;
-      justify-content: space-between; gap: 12px;
+      justify-content: space-between; gap: 12px; cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hour-slot:hover {
+      background: rgba(255, 255, 255, 0.05);
+      transform: translateY(-1px);
     }
     .hour-slot.logged {
       background: linear-gradient(135deg, var(--card) 0%, #1a3d2e 100%);
       border-color: var(--pri);
+    }
+    .hour-indicator {
+      font-size: 18px; min-width: 30px; text-align: center;
     }
     .hour-time {
       font-weight: 700; color: var(--text); min-width: 80px;
@@ -442,7 +632,7 @@
       <h1>Daily Tasks</h1>
       
       <!-- Date Selector -->
-      <div class="form-group" style="margin-bottom: 8px;">
+      <div class="form-group" style="margin-bottom: 8px; margin-top: 60px;">
         <div class="flex">
           <input id="tasks-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" onchange="setCurrentDate(this.value)" />
           <button class="btn orange small" onclick="setCurrentDate(PrismUtils.todayKey())">Today</button>
@@ -465,6 +655,11 @@
       <div class="flex" style="margin-bottom: 16px;">
         <button class="btn acc" onclick="startFocus()">🎯 Start Focus</button>
         <button class="btn pri" onclick="openTaskModal()">+ Add Task</button>
+      </div>
+      
+      <!-- Today's Tasks Button -->
+      <div style="margin-bottom: 16px;">
+        <button class="btn orange" onclick="showTodaysTasksPopup()">📅 Today's Tasks by Due Time</button>
       </div>
       
       <!-- Task Lanes -->
@@ -540,6 +735,8 @@
           <div class="step-display" style="text-align: center; margin: 16px 0;">
             <div id="current-steps" style="font-size: 48px; font-weight: bold; color: var(--accent);">0</div>
             <div class="info-text">Steps this session</div>
+            <div id="calories-burned" class="success-text" style="margin-top: 4px; font-weight: 600;">~0 cal</div>
+            <div id="motion-indicator" class="info-text" style="margin-top: 4px; color: #64748b;">Motion sensor: inactive</div>
           </div>
           
           <div id="session-timer" class="info-text" style="text-align: center; margin-bottom: 16px;">00:00:00</div>
@@ -599,7 +796,17 @@
         <!-- Timer Display -->
         <div class="current-task">
           <div id="session-phase" class="info-text" style="text-align: center; margin-bottom: 8px;">Work Session</div>
-          <div class="task-timer" id="focus-timer">30:00</div>
+          
+          <!-- Large Sandclock Display -->
+          <div class="focus-sandclock" id="focus-sandclock">
+            <div class="focus-sandclock-container">
+              <div class="focus-sandclock-bg">⏳</div>
+              <div class="focus-sandclock-progress">
+                <div class="focus-sandclock-fill" id="focus-sandclock-fill">⏳</div>
+              </div>
+            </div>
+            <div class="focus-timer-display" id="focus-timer">30:00</div>
+          </div>
           
           <!-- Session Timer Controls -->
           <div class="timer-controls" style="display: flex; gap: 8px; justify-content: center; margin: 8px 0; font-size: 12px;">
@@ -741,7 +948,7 @@
     <h1 style="margin: 2px 0 6px;">Hourly Activity Log</h1>
     
     <!-- Date Selector -->
-    <div class="form-group" style="margin-bottom: 8px;">
+    <div class="form-group" style="margin-bottom: 8px; margin-top: 60px;">
       <div class="flex">
         <input id="hourly-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" />
         <button class="btn orange small" onclick="refreshHourlyLog()">Load</button>
@@ -762,7 +969,7 @@
   <div id="hourly-stats-screen" class="main hidden">
     <h1 style="margin: 2px 0 6px;">Hourly Log Details</h1>
     
-    <div class="form-group" style="margin-bottom: 8px;">
+    <div class="form-group" style="margin-bottom: 8px; margin-top: 60px;">
       <div class="flex">
         <input id="hourly-stats-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" />
         <button class="btn orange small" onclick="refreshHourlyStats()">Load</button>
@@ -782,7 +989,7 @@
     <h1 style="margin: 2px 0 6px;">Daily Tasks Overview</h1>
     
     <!-- Date Selector -->
-    <div class="form-group" style="margin-bottom: 8px;">
+    <div class="form-group" style="margin-bottom: 8px; margin-top: 60px;">
       <div class="flex">
         <input id="daily-date-picker" type="date" class="form-input" style="font-size: 14px; padding: 8px;" />
         <button class="btn orange small" onclick="refreshDailyView()">Load</button>
@@ -841,28 +1048,43 @@
   
   <!-- Bottom Tab Bar -->
   <div class="tab-bar">
-    <button class="tab-btn active" onclick="switchTab('tasks')" aria-label="Tasks Tab">
+    <button class="tab-btn active" onclick="switchTab('tasks', event)" aria-label="Tasks Tab">
       <div class="tab-icon">✓</div>
       <div>Tasks</div>
     </button>
-    <button class="tab-btn" onclick="switchTab('chant')" aria-label="Chant Tab">
+    <button class="tab-btn" onclick="switchTab('chant', event)" aria-label="Chant Tab">
       <div class="tab-icon">🕉</div>
       <div>Chant</div>
     </button>
-    <button class="tab-btn" onclick="switchTab('steps')" aria-label="Steps Tab">
+    <button class="tab-btn" onclick="switchTab('steps', event)" aria-label="Steps Tab">
       <div class="tab-icon">👟</div>
       <div>Steps</div>
     </button>
-    <button class="tab-btn" onclick="switchTab('hourly')" aria-label="Hourly Log Tab">
+    <button class="tab-btn" onclick="switchTab('hourly', event)" aria-label="Hourly Log Tab">
       <div class="tab-icon">⏰</div>
       <div>Hourly</div>
     </button>
-    <button class="tab-btn" onclick="switchTab('daily')" aria-label="Daily View Tab">
+    <button class="tab-btn" onclick="switchTab('daily', event)" aria-label="Daily View Tab">
       <div class="tab-icon">📊</div>
       <div>Daily</div>
     </button>
   </div>
-  
+
+  <button id="voice-command-button" type="button" class="mic-button" aria-label="Voice command">
+    🎤
+  </button>
+
+  <!-- Simple Timer Indicator -->
+  <div id="timer-indicator" class="timer-indicator hidden" onclick="returnToFocusSession()" title="Focus timer running - Click to return">
+    <div class="sandclock-container">
+      <div class="sandclock-bg">⏳</div>
+      <div class="sandclock-progress">
+        <div class="sandclock-fill" id="timer-indicator-fill">⏳</div>
+      </div>
+    </div>
+    <div class="timer-indicator-time" id="timer-indicator-time">25:00</div>
+  </div>
+
   <!-- Task Modal -->
   <div id="task-modal" class="modal-overlay hidden">
     <div class="modal">
@@ -922,6 +1144,11 @@
         <div class="form-group">
           <label class="form-label">Due Date (optional)</label>
           <input id="task-due" class="form-input" type="date" />
+        </div>
+        
+        <div class="form-group">
+          <label class="form-label">Due Time</label>
+          <input id="task-due-time" class="form-input" type="time" value="17:30" />
         </div>
         
         <div class="flex" style="margin-top: 20px;">
@@ -1172,6 +1399,20 @@
       </div>
     </div>
   </div>
+  
+  <!-- Today's Tasks Popup Modal -->
+  <div id="todays-tasks-modal" class="modal-overlay hidden">
+    <div class="modal" style="max-width: 95%; max-height: 90vh;">
+      <h2>Today's Tasks by Due Time</h2>
+      <div id="todays-tasks-list" style="max-height: 60vh; overflow-y: auto; margin: 16px 0;">
+        <!-- Tasks will be populated here -->
+      </div>
+      <div class="flex" style="margin-top: 16px;">
+        <button class="btn secondary" onclick="closeTodaysTasksModal()">Close</button>
+      </div>
+    </div>
+  </div>
+  
 
 <script>
   /* ===== Utility Functions ===== */
@@ -1191,6 +1432,12 @@
         return d.getFullYear() + '-' + 
                String(d.getMonth() + 1).padStart(2, '0') + '-' + 
                String(d.getDate()).padStart(2, '0');
+      },
+      
+      formatDate(date) {
+        return date.getFullYear() + '-' + 
+               String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+               String(date.getDate()).padStart(2, '0');
       },
       
       loadMonth(kind, ymStr) {
@@ -1321,6 +1568,15 @@
   /* ===== App State ===== */
   let currentTab = 'tasks';
   let currentTask = null;
+  
+  /* ===== Voice Task Creation State ===== */
+  let voiceTaskCreationMode = false;
+  let currentVoiceField = null;
+  let voiceTaskData = {};
+  let voiceInputStep = 0; // 0: waiting for title, 1: waiting for points, 2: waiting for date
+  let voiceInputBuffer = '';
+  let voiceTimeoutTimer = null;
+  let voiceInitialWaitTimer = null;
   let focusTimer = null;
   let focusStartTime = null;
   let focusElapsed = 0;
@@ -1345,6 +1601,7 @@
   let focusTotalTime = 0;
   let focusIsPaused = false;
   let editingTaskPoints = null;
+  let focusSessionActive = false; // Track if focus session is running
   
   // Step Counter State
   let stepCounterActive = false;
@@ -1354,8 +1611,106 @@
   let sessionSteps = 0;
   let stepCounterSensor = null;
 
+  /* ===== Timer Indicator Management ===== */
+  function showTimerIndicator() {
+    const timerIndicator = document.getElementById('timer-indicator');
+    if (timerIndicator) {
+      timerIndicator.classList.remove('hidden');
+      updateTimerIndicator();
+    }
+  }
+
+  function hideTimerIndicator() {
+    const timerIndicator = document.getElementById('timer-indicator');
+    if (timerIndicator) {
+      timerIndicator.classList.add('hidden');
+    }
+  }
+
+  function updateTimerIndicator() {
+    const timerIndicator = document.getElementById('timer-indicator');
+    if (timerIndicator) {
+      // Remove all phase classes
+      timerIndicator.classList.remove('work', 'reflection', 'break');
+      // Add current phase class for color coding
+      timerIndicator.classList.add(focusPhase);
+      
+      // Update progress and time
+      updateSandclockProgress();
+    }
+  }
+
+  function updateSandclockProgress() {
+    // Get the total duration for current phase
+    let totalDuration;
+    const workDuration = parseInt(document.getElementById('session-work-duration')?.value || 30);
+    const reflectionDuration = parseInt(document.getElementById('session-reflection-duration')?.value || 5);
+    const breakDuration = parseInt(document.getElementById('session-break-duration')?.value || 10);
+    
+    switch (focusPhase) {
+      case 'work':
+        totalDuration = workDuration * 60;
+        break;
+      case 'reflection':
+        totalDuration = reflectionDuration * 60;
+        break;
+      case 'break':
+        totalDuration = breakDuration * 60;
+        break;
+      default:
+        totalDuration = 30 * 60;
+    }
+    
+    // Calculate progress percentage (inverted - full at start, empty at end)
+    const progressPercent = Math.max(0, (focusTimeRemaining / totalDuration) * 100);
+    
+    // Format time display
+    const minutes = Math.floor(focusTimeRemaining / 60);
+    const seconds = focusTimeRemaining % 60;
+    const timeStr = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    
+    // Update small timer indicator
+    const timerIndicatorFill = document.getElementById('timer-indicator-fill');
+    const timerIndicatorTime = document.getElementById('timer-indicator-time');
+    if (timerIndicatorFill) {
+      timerIndicatorFill.style.height = `${progressPercent}%`;
+    }
+    if (timerIndicatorTime) {
+      timerIndicatorTime.textContent = timeStr;
+    }
+    
+    // Update large focus sandclock
+    const focusSandclock = document.getElementById('focus-sandclock');
+    const focusSandclockFill = document.getElementById('focus-sandclock-fill');
+    if (focusSandclock) {
+      focusSandclock.classList.remove('work', 'reflection', 'break');
+      focusSandclock.classList.add(focusPhase);
+    }
+    if (focusSandclockFill) {
+      focusSandclockFill.style.height = `${progressPercent}%`;
+    }
+  }
+
+  function returnToFocusSession() {
+    if (!focusSessionActive) return;
+    
+    // Switch to focus screen
+    document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add('hidden'));
+    document.querySelectorAll('.main').forEach(el => el.classList.add('hidden'));
+    document.getElementById('focus-screen').classList.remove('hidden');
+    
+    // Update tab bar to show no active tab (since we're in focus mode)
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    // Hide timer indicator when in focus screen
+    hideTimerIndicator();
+    
+    // Update focus display
+    updateFocusDisplay();
+  }
+
   /* ===== Navigation ===== */
-  function switchTab(tabName) {
+  function switchTab(tabName, event = null) {
     currentTab = tabName;
     
     // Hide all tabs
@@ -1367,7 +1722,25 @@
     
     // Update tab bar
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-    event.target.closest('.tab-btn').classList.add('active');
+    
+    // Handle tab button activation - either from event or find by data attribute
+    if (event && event.target) {
+      const tabBtn = event.target.closest('.tab-btn');
+      if (tabBtn) {
+        tabBtn.classList.add('active');
+      }
+    } else {
+      // Find tab button by data attribute when called programmatically
+      const tabBtn = document.querySelector(`[onclick*="switchTab('${tabName}')"]`);
+      if (tabBtn) {
+        tabBtn.classList.add('active');
+      }
+    }
+    
+    // Show timer indicator if focus session is active and we're not in focus screen
+    if (focusSessionActive && tabName !== 'focus') {
+      showTimerIndicator();
+    }
     
     // Refresh tab content
     if (tabName === 'tasks') {
@@ -1389,6 +1762,32 @@
   /* ===== Task Management ===== */
   function generateTaskId() {
     return 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+  }
+
+  function formatDueDateTime(dueDate, dueTime) {
+    if (!dueDate) return '';
+    
+    const date = new Date(dueDate);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    
+    let dateStr = '';
+    if (dueDate === PrismUtils.todayKey()) {
+      dateStr = 'Today';
+    } else if (dueDate === PrismUtils.formatDate(tomorrow)) {
+      dateStr = 'Tomorrow'; 
+    } else {
+      dateStr = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+    
+    // Format time from 24h to 12h format
+    const timeStr = dueTime || '17:30';
+    const [hours, minutes] = timeStr.split(':');
+    const hour12 = ((parseInt(hours) + 11) % 12) + 1;
+    const ampm = parseInt(hours) >= 12 ? 'PM' : 'AM';
+    
+    return `${dateStr} ${hour12}:${minutes} ${ampm}`;
   }
 
   function getCurrentDate() {
@@ -1433,10 +1832,35 @@
 
   function categorizeTasks() {
     const tasks = loadTasks();
-    nowTasks = tasks.filter(t => t.bucket === 'Now' && t.status !== 'done');
-    nextTasks = tasks.filter(t => t.bucket === 'Next' && t.status !== 'done');
-    laterTasks = tasks.filter(t => t.bucket === 'Later' && t.status !== 'done');
-    finishedTasks = tasks.filter(t => t.status === 'done');
+    
+    // Helper function to create a sortable datetime string
+    const getDueDateTimeSort = (task) => {
+      if (!task.due) return '9999-12-31 23:59'; // Put tasks without due date at the end
+      const dueTime = task.dueTime || '17:30';
+      return `${task.due} ${dueTime}`;
+    };
+    
+    // Sort tasks by due date and time, then by creation date
+    const sortTasks = (taskList) => {
+      return taskList.sort((a, b) => {
+        const aDateTime = getDueDateTimeSort(a);
+        const bDateTime = getDueDateTimeSort(b);
+        
+        if (aDateTime !== bDateTime) {
+          return aDateTime.localeCompare(bDateTime);
+        }
+        
+        // If due date/time is the same, sort by creation date (newest first)
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+      });
+    };
+    
+    nowTasks = sortTasks(tasks.filter(t => t.bucket === 'Now' && t.status !== 'done'));
+    nextTasks = sortTasks(tasks.filter(t => t.bucket === 'Next' && t.status !== 'done'));
+    laterTasks = sortTasks(tasks.filter(t => t.bucket === 'Later' && t.status !== 'done'));
+    finishedTasks = tasks.filter(t => t.status === 'done').sort((a, b) => 
+      new Date(b.completedAt || b.updatedAt || 0) - new Date(a.completedAt || a.updatedAt || 0)
+    );
   }
 
   function refreshTasks() {
@@ -1523,7 +1947,7 @@
           <div class="task-meta">
             <span class="chip">${task.priority_tag}</span>
             <span class="chip">${task.energy}</span>
-            ${task.due ? `<span class="chip">Due ${task.due}</span>` : ''}
+            ${task.due ? `<span class="chip">Due ${formatDueDateTime(task.due, task.dueTime)}</span>` : ''}
             ${isFinished && task.completedAt ? `<span class="chip">✓ ${new Date(task.completedAt).toLocaleDateString()}</span>` : ''}
             ${!isFinished ? `<span class="chip" style="background: var(--pri); color: white;">${(task.completedPoints || 0)}/${task.points} pts</span>` : ''}
           </div>
@@ -1623,6 +2047,7 @@
     document.getElementById('task-points-input').value = task.points;
     document.getElementById('task-completed-points-input').value = task.completedPoints || 0;
     document.getElementById('task-due').value = task.due || '';
+    document.getElementById('task-due-time').value = task.dueTime || '17:30';
     
     selectPriority(task.priority_tag);
     selectEnergy(task.energy);
@@ -1644,6 +2069,7 @@
     document.getElementById('task-points-input').value = '1';
     document.getElementById('task-completed-points-input').value = '0';
     document.getElementById('task-due').value = '';
+    document.getElementById('task-due-time').value = '17:30';
     
     selectPriority('Do');
     selectEnergy('med');
@@ -1790,8 +2216,10 @@
       energy: document.querySelector('[data-energy].active').dataset.energy,
       status: 'todo',
       due: document.getElementById('task-due').value || null,
+      dueTime: document.getElementById('task-due-time').value || '17:30',
       createdAt: editingTaskId ? undefined : PrismUtils.nowISO(),
-      updatedAt: PrismUtils.nowISO()
+      updatedAt: PrismUtils.nowISO(),
+      movedFromPast: false  // Clear the flag when task is manually edited
     };
     
     const tasks = loadTasks();
@@ -1807,6 +2235,195 @@
     saveTasks(tasks);
     closeTaskModal();
     refreshTasks();
+  }
+
+  /* ===== Today's Tasks Popup ===== */
+  function showTodaysTasksPopup() {
+    const today = PrismUtils.todayKey();
+    const todayDate = new Date(today);
+    
+    // Get dates for the last 3 days
+    const dates = [];
+    for (let i = 3; i >= 0; i--) {
+      const date = new Date(todayDate);
+      date.setDate(todayDate.getDate() - i);
+      dates.push(PrismUtils.formatDate(date));
+    }
+    
+    // Load today's tasks
+    let todaysTasks = loadTasks(today);
+    let movedTasks = [];
+    
+    // Check last 3 days for incomplete tasks
+    for (let i = 0; i < dates.length - 1; i++) {
+      const dateKey = dates[i];
+      const pastTasks = loadTasks(dateKey);
+      
+      // Find incomplete tasks from past dates
+      const incompleteTasks = pastTasks.filter(task => task.status !== 'done');
+      
+      if (incompleteTasks.length > 0) {
+        incompleteTasks.forEach(task => {
+          // Mark as moved from past
+          task.due = today;
+          task.movedFromPast = true;
+          task.originalDueDate = task.due !== today ? (task.due || dateKey) : dateKey;
+          task.updatedAt = PrismUtils.nowISO();
+          movedTasks.push(task);
+        });
+        
+        // Remove incomplete tasks from the old date (keep completed ones)
+        const remainingTasks = pastTasks.filter(task => task.status === 'done');
+        saveTasks(remainingTasks, dateKey);
+      }
+    }
+    
+    // Add moved tasks to today's task list
+    if (movedTasks.length > 0) {
+      todaysTasks = [...todaysTasks, ...movedTasks];
+      saveTasks(todaysTasks, today);
+    }
+    
+    // Filter tasks for today only (in case some don't have due date set)
+    const displayTasks = todaysTasks;
+    
+    // Sort tasks by priority (red/orange first, then green last) and then by due time
+    const sortedTasks = displayTasks.sort((a, b) => {
+      const progressA = getTaskProgress(a);
+      const progressB = getTaskProgress(b);
+      const colorA = getTaskColorClass(progressA, a);
+      const colorB = getTaskColorClass(progressB, b);
+      
+      // Priority order: red=0, orange=1, yellow=2, green=3 (lower number = higher priority)
+      const colorPriority = { 
+        'task-red': 0,     // Highest priority
+        'task-orange': 1,  // Second priority  
+        'task-yellow': 2,  // Third priority
+        'task-green': 3    // Lowest priority (last)
+      };
+      const priorityA = colorPriority[colorA] || 4;
+      const priorityB = colorPriority[colorB] || 4;
+      
+      // Sort by priority first (red and orange come first, green comes last)
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // If same priority, sort by due time
+      const timeA = a.dueTime || '23:59';
+      const timeB = b.dueTime || '23:59';
+      return timeA.localeCompare(timeB);
+    });
+    
+    // Render tasks with color coding
+    const container = document.getElementById('todays-tasks-list');
+    if (sortedTasks.length === 0) {
+      container.innerHTML = '<div class="info-text" style="text-align: center; padding: 20px;">No tasks for today</div>';
+    } else {
+      container.innerHTML = sortedTasks.map(task => {
+        const progress = getTaskProgress(task);
+        const colorClass = getTaskColorClass(progress, task);
+        const dueTime = task.dueTime || 'No time set';
+        const status = task.status === 'done' ? '✅' : '⏳';
+        const remainingPoints = (task.points || 0) - (task.completedPoints || 0);
+        const hoursLeft = getHoursUntilDeadline(task);
+        
+        // Add special styling and badge for tasks moved from past
+        const movedClass = task.movedFromPast ? 'task-moved-from-past' : '';
+        const movedBadge = task.movedFromPast ? '<span style="background: #fbbf24; color: #000; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; margin-left: 8px;">MOVED FROM PAST</span>' : '';
+        
+        return `
+          <div class="card ${colorClass} ${movedClass} task-clickable" style="margin-bottom: 8px; border-left: 4px solid ${getTaskBorderColor(progress, task)};" onclick="openTaskEditFromPopup('${task.id}')">
+            <div class="flex flex-between" style="align-items: flex-start;">
+              <div style="flex: 1;">
+                <div class="task-title" style="font-size: 14px; margin-bottom: 4px;">${status} ${task.title}${movedBadge}</div>
+                <div class="task-meta" style="font-size: 12px; color: var(--muted);">
+                  <span>Due: ${dueTime}</span>
+                  <span style="margin-left: 8px;">Points: ${task.completedPoints || 0}/${task.points}</span>
+                </div>
+                <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">
+                  Progress: ${Math.round(progress)}% | Remaining: ${remainingPoints} pts | Time left: ${hoursLeft === Infinity ? '∞' : Math.round(hoursLeft * 10) / 10}h
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+    
+    // Show a toast if tasks were moved
+    if (movedTasks.length > 0) {
+      showToast(`${movedTasks.length} task(s) moved from previous days to today`);
+    }
+    
+    document.getElementById('todays-tasks-modal').classList.remove('hidden');
+  }
+  
+  function openTaskEditFromPopup(taskId) {
+    // Close the today's tasks modal
+    closeTodaysTasksModal();
+    // Open the edit task modal
+    editTask(taskId);
+  }
+  
+  function closeTodaysTasksModal() {
+    document.getElementById('todays-tasks-modal').classList.add('hidden');
+  }
+  
+  function getTaskProgress(task) {
+    if (task.status === 'done') return 100;
+    if (!task.points || task.points === 0) return 0;
+    const completed = task.completedPoints || 0;
+    return (completed / task.points) * 100;
+  }
+  
+  function getTaskColorClass(progress, task) {
+    if (progress >= 100) return 'task-green';
+    
+    // Calculate remaining points and time left
+    const remainingPoints = (task.points || 0) - (task.completedPoints || 0);
+    const hoursLeft = getHoursUntilDeadline(task);
+    
+    // Orange condition: ≤1.5 points left AND ≥4.5 hours left
+    if (remainingPoints <= 1.5 && hoursLeft >= 4.5) {
+      return 'task-orange';
+    }
+    
+    // Yellow condition: ≥70% progress
+    if (progress >= 70) return 'task-yellow';
+    
+    // Red condition: everything else
+    return 'task-red';
+  }
+  
+  function getTaskBorderColor(progress, task) {
+    if (progress >= 100) return '#10b981'; // Green
+    
+    // Calculate remaining points and time left
+    const remainingPoints = (task.points || 0) - (task.completedPoints || 0);
+    const hoursLeft = getHoursUntilDeadline(task);
+    
+    // Orange condition: ≤1.5 points left AND ≥4.5 hours left
+    if (remainingPoints <= 1.5 && hoursLeft >= 4.5) {
+      return '#f97316'; // Orange
+    }
+    
+    // Yellow condition: ≥70% progress
+    if (progress >= 70) return '#f59e0b';  // Yellow
+    
+    // Red condition: everything else
+    return '#ef4444'; // Red
+  }
+  
+  function getHoursUntilDeadline(task) {
+    if (!task.due) return Infinity; // No deadline = infinite time
+    
+    const now = new Date();
+    const dueDate = new Date(`${task.due} ${task.dueTime || '17:30'}`);
+    const diffMs = dueDate - now;
+    const diffHours = diffMs / (1000 * 60 * 60);
+    
+    return Math.max(0, diffHours); // Return 0 if deadline has passed
   }
 
   /* ===== Focus Mode ===== */
@@ -1835,6 +2452,7 @@
     focusSessionCount = 0;
     focusTotalTime = 0;
     focusIsPaused = false;
+    focusSessionActive = false; // Will be set to true when timer starts
     
     showFocusScreen();
   }
@@ -1909,6 +2527,9 @@
     document.getElementById('tab-tasks').classList.add('hidden');
     document.getElementById('focus-screen').classList.remove('hidden');
     
+    // Hide timer indicator when in focus screen
+    hideTimerIndicator();
+    
     // Initialize session timer controls with current settings
     const settings = getTimerSettings();
     document.getElementById('session-work-duration').value = settings.workDuration;
@@ -1919,10 +2540,21 @@
   }
 
   function exitFocus() {
+    // Stop the timer and mark session as inactive
     stopFocusTimer();
+    focusSessionActive = false;
+    
+    // Hide timer indicator
+    hideTimerIndicator();
     
     // Save any progress made during the session
     saveFocusSessionProgress();
+    
+    // Reset focus session state for next time
+    focusIsPaused = false;
+    focusPhase = 'work';
+    const settings = getTimerSettings();
+    focusTimeRemaining = settings.workDuration * 60;
     
     document.getElementById('focus-screen').classList.add('hidden');
     document.getElementById('tab-tasks').classList.remove('hidden');
@@ -1950,6 +2582,11 @@
     // Update session stats
     document.getElementById('session-stats').textContent = 
       `Sessions completed: ${focusSessionCount} | Total focus time: ${Math.floor(focusTotalTime / 60)} min`;
+    
+    // Update sandclock progress for both indicators
+    if (focusSessionActive) {
+      updateSandclockProgress();
+    }
   }
 
   function renderFocusTasksList() {
@@ -2002,8 +2639,11 @@
       focusIsPaused = false;
     } else {
       // Start new phase
-    focusStartTime = Date.now();
+      focusStartTime = Date.now();
     }
+    
+    // Mark session as active
+    focusSessionActive = true;
     
     focusTimer = setInterval(() => {
       focusTimeRemaining--;
@@ -2411,73 +3051,98 @@
   }
 
 function startMotionDetection() {
-    // --- START: Pedometer Accuracy Improvements ---
+    // Ultra-simple: Just count acceleration changes, every 3 = 1 step
+    let rawStepCount = 0;
+    let lastMagnitude = 0;
+    let motionDetected = false;
+    let lastUpdateTime = 0;
+    const UPDATE_INTERVAL = 400; // Check every 400ms (less frequent to avoid micro movements)
+    const CHANGE_THRESHOLD = 2.0; // Higher threshold to filter out small movements
 
-    // Constants for the step detection algorithm.
-    const SENSITIVITY = 0.6;       // Acceleration magnitude threshold to detect a potential peak.
-    const HIGH_PASS_ALPHA = 0.8;    // Filter coefficient to remove the constant force of gravity.
-    const MIN_STEP_INTERVAL = 250;  // 250ms = Max 4 steps/sec (240 steps per minute).
-    const MAX_STEP_INTERVAL = 2000; // 2000ms = Min 0.5 steps/sec (30 steps per minute).
+    stepCounterSensor = (event) => {
+      if (!stepCounterActive) return;
 
-    // State variables that reset for each walking session.
-    let gravity = [0, 0, 0];      // Stores the filtered gravity component.
-    let lastMagnitude = 0;        // Stores the last computed acceleration magnitude.
-    let peakDetected = false;      // Tracks if we are on the upward slope of a potential step.
-    let lastStepTime = 0;          // Timestamp of the last valid step.
+      // Update indicator to show sensor is working
+      if (!motionDetected) {
+        motionDetected = true;
+        const indicator = document.getElementById('motion-indicator');
+        if (indicator) {
+          indicator.textContent = 'Motion sensor: active ✓';
+          indicator.style.color = '#10b981';
+        }
+      }
 
-    stepCounterSensor = (event) => {
-      if (!stepCounterActive) return;
+      const acceleration = event.accelerationIncludingGravity;
+      if (!acceleration || acceleration.x === null || acceleration.x === undefined) {
+        // Try alternate method
+        if (event.acceleration && event.acceleration.x !== null) {
+          acceleration.x = event.acceleration.x;
+          acceleration.y = event.acceleration.y;
+          acceleration.z = event.acceleration.z;
+        } else {
+          return;
+        }
+      }
 
-      const acceleration = event.accelerationIncludingGravity;
-      if (!acceleration || !acceleration.x) return;
+      // Simple magnitude calculation
+      const currentMagnitude = Math.sqrt(
+        acceleration.x ** 2 + 
+        acceleration.y ** 2 + 
+        acceleration.z ** 2
+      );
 
-      // 1. Apply a High-Pass Filter to isolate movement from gravity.
-      // This estimates the gravity vector and subtracts it from the raw sensor data,
-      // leaving only the "linear acceleration" caused by the user's movement.
-      gravity[0] = HIGH_PASS_ALPHA * gravity[0] + (1 - HIGH_PASS_ALPHA) * acceleration.x;
-      gravity[1] = HIGH_PASS_ALPHA * gravity[1] + (1 - HIGH_PASS_ALPHA) * acceleration.y;
-      gravity[2] = HIGH_PASS_ALPHA * gravity[2] + (1 - HIGH_PASS_ALPHA) * acceleration.z;
+      const now = Date.now();
+      
+      // Only process if enough time has passed since last update
+      if (now - lastUpdateTime < UPDATE_INTERVAL) {
+        return;
+      }
+      
+      // If magnitude changed significantly, count it as a movement
+      const magnitudeDiff = Math.abs(currentMagnitude - lastMagnitude);
+      
+      if (magnitudeDiff > CHANGE_THRESHOLD) { // Must be a significant change
+        rawStepCount++;
+        lastUpdateTime = now;
+        
+        // Update indicator
+        const indicator = document.getElementById('motion-indicator');
+        if (indicator) {
+          indicator.textContent = `Motion: ${rawStepCount}/3 (Δ${Math.round(magnitudeDiff * 10) / 10})`;
+          indicator.style.color = '#f59e0b';
+        }
+        
+        // Visual feedback
+        const stepDisplay = document.getElementById('current-steps');
+        stepDisplay.style.color = '#10b981';
+        setTimeout(() => {
+          stepDisplay.style.color = 'var(--accent)';
+        }, 100);
+        
+        // Every 3 raw movements = 1 actual step
+        if (rawStepCount >= 3) {
+          recordStep();
+          rawStepCount = 0;
+          
+          // Vibrate on actual step
+          if (navigator.vibrate) {
+            navigator.vibrate(20);
+          }
+        }
+        
+        lastMagnitude = currentMagnitude;
+      }
+    };
 
-      const linearAccel = {
-        x: acceleration.x - gravity[0],
-        y: acceleration.y - gravity[1],
-        z: acceleration.z - gravity[2]
-      };
-
-      // 2. Calculate the magnitude of the linear acceleration vector.
-      const currentMagnitude = Math.sqrt(linearAccel.x ** 2 + linearAccel.y ** 2 + linearAccel.z ** 2);
-
-      // 3. Implement Peak Detection Logic.
-      // A step is counted when the acceleration magnitude forms a peak. We detect this by:
-      // a) Waiting for the magnitude to rise above our SENSITIVITY threshold (peakDetected = true).
-      // b) Then, waiting for it to fall below the previous magnitude (we've passed the peak).
-      const now = Date.now();
-      if (peakDetected && currentMagnitude < lastMagnitude) {
-        // A peak has just occurred. Now, validate it.
-        const timeSinceLastStep = now - lastStepTime;
-
-        // 4. Apply Time Thresholds to filter out false positives.
-        // The time between steps must be within a reasonable range for walking/running.
-        if (timeSinceLastStep > MIN_STEP_INTERVAL && timeSinceLastStep < MAX_STEP_INTERVAL) {
-          recordStep();
-          lastStepTime = now;
-        }
-        peakDetected = false; // Reset for the next peak.
-      }
-
-      // If magnitude is rising and passes the sensitivity threshold, we may be approaching a peak.
-      if (currentMagnitude > lastMagnitude && currentMagnitude > SENSITIVITY) {
-        peakDetected = true;
-      }
-
-      // Store the current magnitude for the next comparison.
-      lastMagnitude = currentMagnitude;
-    };
-
-    // --- END: Pedometer Accuracy Improvements ---
-
-    window.addEventListener('devicemotion', stepCounterSensor);
-  }
+    window.addEventListener('devicemotion', stepCounterSensor);
+    
+    // Show waiting message
+    const indicator = document.getElementById('motion-indicator');
+    if (indicator) {
+      indicator.textContent = 'Motion sensor: waiting for data...';
+      indicator.style.color = '#f59e0b';
+    }
+  }
 
   function startManualStepCounting() {
     // Add manual step counting button for devices without motion sensors
@@ -2497,6 +3162,13 @@ function startMotionDetection() {
       stepCounterSensor = null;
     }
     
+    // Reset motion indicator
+    const indicator = document.getElementById('motion-indicator');
+    if (indicator) {
+      indicator.textContent = 'Motion sensor: inactive';
+      indicator.style.color = '#64748b';
+    }
+    
     // Remove manual button if it exists
     const manualBtn = document.getElementById('manual-step-btn');
     if (manualBtn) {
@@ -2510,9 +3182,14 @@ function startMotionDetection() {
     sessionSteps++;
     document.getElementById('current-steps').textContent = sessionSteps;
     
+    // Calculate calories (approximately 0.04 calories per step)
+    const calories = Math.round(sessionSteps * 0.04);
+    document.getElementById('calories-burned').textContent = `~${calories} cal`;
+    
     // Update session object
     if (currentStepSession) {
       currentStepSession.steps = sessionSteps;
+      currentStepSession.calories = calories;
     }
   }
 
@@ -2756,7 +3433,12 @@ function startMotionDetection() {
     document.getElementById('session-start').textContent = `Started: ${new Date().toLocaleTimeString()}`;
     document.getElementById('chant-count').textContent = '0';
     
-    if (navigator.vibrate) navigator.vibrate(10);
+    // DroidScript vibrate: short vibration for session start
+    if (typeof app !== 'undefined' && app && typeof app.Vibrate === 'function') {
+      app.Vibrate("0,50");
+    } else if (navigator.vibrate) {
+      navigator.vibrate(10);
+    }
   }
 
   function incrementChant() {
@@ -2767,7 +3449,12 @@ function startMotionDetection() {
     chantSession.count++;
     document.getElementById('chant-count').textContent = String(chantSession.count);
     
-    if (navigator.vibrate) navigator.vibrate(6);
+    // DroidScript vibrate: very short vibration for increment
+    if (typeof app !== 'undefined' && app && typeof app.Vibrate === 'function') {
+      app.Vibrate("0,30");
+    } else if (navigator.vibrate) {
+      navigator.vibrate(6);
+    }
   }
 
   function decrementChant() {
@@ -2776,7 +3463,12 @@ function startMotionDetection() {
     chantSession.count--;
     document.getElementById('chant-count').textContent = String(chantSession.count);
     
-    if (navigator.vibrate) navigator.vibrate(3);
+    // DroidScript vibrate: very short vibration for decrement
+    if (typeof app !== 'undefined' && app && typeof app.Vibrate === 'function') {
+      app.Vibrate("0,20");
+    } else if (navigator.vibrate) {
+      navigator.vibrate(3);
+    }
   }
 
   function finishAndSaveChant() {
@@ -2952,6 +3644,7 @@ function startMotionDetection() {
     timeline.innerHTML = html;
   }
   
+
   function renderHourlyEntry(entry) {
     let html = '';
     
@@ -3014,6 +3707,10 @@ function startMotionDetection() {
   }
   
   function openHourlyModal(hour) {
+    if (hour == null || isNaN(hour)) {
+      console.error('Invalid hour value:', hour);
+      return;
+    }
     editingHourlyHour = hour;
     const hourDisplay = String(hour).padStart(2, '0') + ':00';
     
@@ -3128,8 +3825,6 @@ function startMotionDetection() {
   function saveHourlyEntry(event) {
     event.preventDefault();
     
-    if (editingHourlyHour === null) return;
-    
     const additionalTasks = document.getElementById('hourly-additional-tasks').value.trim();
     const notes = document.getElementById('hourly-notes').value.trim();
     const points = parseInt(document.getElementById('hourly-points').textContent) || 0;
@@ -3221,6 +3916,7 @@ function startMotionDetection() {
     document.getElementById('hourly-stats-date-picker').value = currentHourlyDate || PrismUtils.todayKey();
     refreshHourlyStats();
   }
+  
   
   function exitHourlyStats() {
     document.getElementById('hourly-stats-screen').classList.add('hidden');
@@ -3994,12 +4690,821 @@ function startMotionDetection() {
     toast.className = 'toast';
     toast.textContent = message;
     document.body.appendChild(toast);
-    
+
     setTimeout(() => {
       if (document.body.contains(toast)) {
         document.body.removeChild(toast);
       }
     }, duration);
+  }
+
+  /* ===== Voice Command Recognition ===== */
+  const VOICE_COMMANDS = [
+    {
+      target: 'add task',
+      variants: ['add task', 'add tasks', 'add new task', 'add another task', 'add the task', 'please add task', 'task']
+    },
+    {
+      target: 'start walking session',
+      variants: [
+        'start walking session',
+        'start walk session',
+        'start walking',
+        'walking',
+        'walk',
+        'start my walk session',
+        'start my walking session',
+        'start walking walking session'
+      ]
+    }
+  ];
+
+  VOICE_COMMANDS.forEach(command => {
+    command.normalizedVariants = command.variants.map(variant => baseNormalize(variant));
+  });
+
+  function baseNormalize(text) {
+    return (text || '')
+      .toLowerCase()
+      .replace(/[“”"'`]/g, '')
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function normalizeTranscript(text) {
+    let cleaned = baseNormalize(text);
+    if (!cleaned) return '';
+
+    cleaned = cleaned
+      .replace(/\b(can you|could you|would you|please|hey|hi|okay|ok|kindly)\b/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    if (!cleaned) return '';
+
+    const parts = cleaned.split(' ');
+    const deduped = [];
+    for (const part of parts) {
+      if (!deduped.length || deduped[deduped.length - 1] !== part) {
+        deduped.push(part);
+      }
+    }
+
+    return baseNormalize(deduped.join(' '));
+  }
+
+  function levenshtein(a, b) {
+    if (a === b) return 0;
+    if (!a) return b.length;
+    if (!b) return a.length;
+
+    const lenA = a.length;
+    const lenB = b.length;
+    let prev = new Array(lenB + 1);
+    let curr = new Array(lenB + 1);
+
+    for (let j = 0; j <= lenB; j++) {
+      prev[j] = j;
+    }
+
+    for (let i = 1; i <= lenA; i++) {
+      curr[0] = i;
+      const charA = a.charCodeAt(i - 1);
+      for (let j = 1; j <= lenB; j++) {
+        const cost = charA === b.charCodeAt(j - 1) ? 0 : 1;
+        const deletion = prev[j] + 1;
+        const insertion = curr[j - 1] + 1;
+        const substitution = prev[j - 1] + cost;
+        curr[j] = Math.min(deletion, insertion, substitution);
+      }
+      const temp = prev;
+      prev = curr;
+      curr = temp;
+    }
+
+    return prev[lenB];
+  }
+
+  function findBestCommandMatch(input) {
+    let bestMatch = null;
+
+    for (const command of VOICE_COMMANDS) {
+      command.normalizedVariants.forEach(variant => {
+        const distance = levenshtein(input, variant);
+        const referenceLength = Math.max(variant.length, input.length);
+        const allowedDistance = Math.max(2, Math.ceil(referenceLength * 0.35));
+
+        if (distance <= allowedDistance) {
+          if (!bestMatch || distance < bestMatch.distance) {
+            bestMatch = { target: command.target, distance };
+          }
+        }
+      });
+    }
+
+    return bestMatch;
+  }
+
+  function vibratePattern(patternConfig) {
+    const config = typeof patternConfig === 'object' && patternConfig !== null
+      ? patternConfig
+      : { dsValue: patternConfig, navValue: patternConfig };
+    const dsValue = config.dsValue;
+    const navValue = Object.prototype.hasOwnProperty.call(config, 'navValue')
+      ? config.navValue
+      : config.dsValue;
+
+    const tryVibrate = (scope) => {
+      if (!scope || typeof scope.Vibrate !== 'function') return false;
+      try {
+        // DroidScript expects comma-separated string pattern like "0,100,30,100,50,300"
+        scope.Vibrate(String(dsValue));
+        return true;
+      } catch (err) {
+        return false;
+      }
+    };
+
+    if (typeof app !== 'undefined' && tryVibrate(app)) return;
+    if (typeof gfx !== 'undefined' && tryVibrate(gfx)) return;
+
+    try {
+      if (typeof navigator !== 'undefined' && navigator && typeof navigator.vibrate === 'function') {
+        navigator.vibrate(navValue);
+      }
+    } catch (err) {
+      // Ignore vibration errors silently for unsupported devices
+    }
+  }
+
+  function vibrateSuccess() {
+    vibratePattern({ dsValue: "0,100", navValue: 100 });
+  }
+
+  function vibrateFailure() {
+    vibratePattern({ dsValue: "0,50,50,50,50,50", navValue: [50, 50, 50, 50, 50] });
+  }
+
+  // Audio feedback function for voice commands
+  function playBeepSound() {
+    try {
+      // Create a short beep sound using Web Audio API
+      const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+      
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+      
+      oscillator.frequency.setValueAtTime(800, audioContext.currentTime); // 800 Hz beep
+      gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+      
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (error) {
+      console.log('Audio beep not available:', error);
+    }
+  }
+
+  // Execute voice command actions
+  function executeVoiceCommand(commandTarget) {
+    switch (commandTarget) {
+      case 'start walking session':
+        playBeepSound();
+        // Switch to steps tab
+        switchTab('steps');
+        // Start walking session automatically
+        setTimeout(() => {
+          startWalkingSession();
+        }, 100); // Small delay to ensure tab switch completes
+        return true;
+      
+      case 'add task':
+        playBeepSound();
+        startVoiceTaskCreation();
+        return true;
+      
+      default:
+        return false;
+    }
+  }
+
+  function interpretVoiceCandidates(candidates) {
+    const normalizedInputs = [];
+    candidates.forEach(candidate => {
+      const normalized = normalizeTranscript(candidate);
+      if (normalized) {
+        normalizedInputs.push(normalized);
+      }
+    });
+
+    if (!normalizedInputs.length) {
+      vibrateFailure();
+      if (!voiceTaskCreationMode) {
+        alert("Sorry, couldn't find the command.");
+      }
+      return false;
+    }
+
+    // If in voice task creation mode, process as voice input
+    if (voiceTaskCreationMode) {
+      const input = normalizedInputs[0];
+      processVoiceInput(input);
+      vibrateSuccess();
+      return true;
+    }
+
+    let bestMatch = null;
+    normalizedInputs.forEach(input => {
+      const match = findBestCommandMatch(input);
+      if (match && (!bestMatch || match.distance < bestMatch.distance)) {
+        bestMatch = match;
+      }
+    });
+
+    if (bestMatch) {
+      vibrateSuccess();
+      
+      // Try to execute the command action
+      const executed = executeVoiceCommand(bestMatch.target);
+      
+      if (executed) {
+        // Command was executed successfully
+        console.log(`Voice command executed: ${bestMatch.target}`);
+      } else {
+        // Command recognized but no action implemented yet
+        if (!voiceTaskCreationMode) {
+          alert(`Identified command: ${bestMatch.target}`);
+        }
+      }
+      
+      return true;
+    }
+
+
+    vibrateFailure();
+    if (!voiceTaskCreationMode) {
+      alert("Sorry, couldn't find the command.");
+    }
+    return false;
+  }
+
+  function toggleVoiceButtonListening(state) {
+    const button = document.getElementById('voice-command-button');
+    if (button) {
+      button.classList.toggle('listening', Boolean(state));
+    }
+  }
+
+  function promptForCommand() {
+    toggleVoiceButtonListening(false);
+    const typed = prompt('Enter command');
+    if (typed !== null) {
+      interpretVoiceCandidates([typed]);
+    }
+  }
+
+  /* ===== Voice Task Creation Functions ===== */
+  function startVoiceTaskCreation() {
+    voiceTaskCreationMode = true;
+    voiceInputStep = 0;
+    voiceInputBuffer = '';
+    voiceTaskData = {
+      title: '',
+      points: 1,
+      due: '',
+      dueTime: '17:30',
+      priority_tag: 'Do',
+      energy: 'med',
+      bucket: 'Now'
+    };
+    
+    // Open task modal
+    openTaskModal();
+    
+    // Add close button to modal
+    addVoiceCloseButton();
+    
+    // Show listening icon with close button
+    showVoiceListeningIcon();
+    
+    // Show initial instruction
+    showToast('Listening for task title...');
+    
+    // Start initial wait timer (5 seconds)
+    voiceInitialWaitTimer = setTimeout(() => {
+      if (voiceInputStep === 0 && !voiceInputBuffer.trim()) {
+        // Wait 3 more seconds
+        setTimeout(() => {
+          if (voiceInputStep === 0 && !voiceInputBuffer.trim()) {
+            showToast('Command not received. Please try again or use keyboard.');
+            stopVoiceTaskCreation();
+          }
+        }, 3000);
+      }
+    }, 5000);
+    
+    // Start listening
+    setTimeout(() => {
+      VoiceController.startListening();
+    }, 500);
+  }
+  
+  function addVoiceCloseButton() {
+    // Add close button to modal if not already present
+    const modal = document.getElementById('task-modal');
+    const existingCloseBtn = modal.querySelector('.voice-close-btn');
+    if (!existingCloseBtn) {
+      const closeBtn = document.createElement('button');
+      closeBtn.className = 'btn secondary small voice-close-btn';
+      closeBtn.textContent = 'Close Voice Mode';
+      closeBtn.style.marginTop = '10px';
+      closeBtn.onclick = stopVoiceTaskCreation;
+      
+      const form = modal.querySelector('form');
+      if (form) {
+        form.appendChild(closeBtn);
+      }
+    }
+  }
+  
+  function showVoiceListeningIcon() {
+    // Create or update listening icon
+    let icon = document.getElementById('voice-listening-icon');
+    if (!icon) {
+      icon = document.createElement('div');
+      icon.id = 'voice-listening-icon';
+      icon.className = 'voice-listening-icon';
+      icon.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 10px;">
+          <div style="font-size: 48px;">🎤</div>
+          <button onclick="stopVoiceTaskCreation()" style="
+            background: #ef4444; 
+            color: white; 
+            border: none; 
+            padding: 8px 16px; 
+            border-radius: 6px; 
+            font-size: 14px; 
+            cursor: pointer;
+          ">Close</button>
+        </div>
+      `;
+      document.body.appendChild(icon);
+    }
+    icon.style.display = 'block';
+  }
+  
+  function hideVoiceListeningIcon() {
+    const icon = document.getElementById('voice-listening-icon');
+    if (icon) {
+      icon.style.display = 'none';
+    }
+  }
+  
+  function stopVoiceTaskCreation() {
+    voiceTaskCreationMode = false;
+    voiceInputStep = 0;
+    voiceInputBuffer = '';
+    
+    // Clear timers
+    if (voiceTimeoutTimer) {
+      clearTimeout(voiceTimeoutTimer);
+      voiceTimeoutTimer = null;
+    }
+    if (voiceInitialWaitTimer) {
+      clearTimeout(voiceInitialWaitTimer);
+      voiceInitialWaitTimer = null;
+    }
+    
+    // Hide listening icon
+    hideVoiceListeningIcon();
+    
+    // Remove close button from modal
+    const closeBtn = document.querySelector('.voice-close-btn');
+    if (closeBtn) {
+      closeBtn.remove();
+    }
+    
+    // Stop voice recognition
+    if (VoiceController && VoiceController.stopListening) {
+      VoiceController.stopListening();
+    }
+    
+    // Only show toast if we're not in the middle of processing title
+    if (voiceInputStep === 0) {
+      showToast('Voice mode stopped. You can now use keyboard input.');
+    }
+  }
+  
+  
+  function processVoiceInput(text) {
+    if (!voiceTaskCreationMode) return;
+    
+    // Clear any existing timeout
+    if (voiceTimeoutTimer) {
+      clearTimeout(voiceTimeoutTimer);
+    }
+    
+    // Add to buffer
+    voiceInputBuffer += (voiceInputBuffer ? ' ' : '') + text.trim();
+    
+    // Set timeout to process input after 3 seconds of silence
+    voiceTimeoutTimer = setTimeout(() => {
+      processBufferedInput();
+    }, 3000);
+  }
+  
+  function processBufferedInput() {
+    if (!voiceInputBuffer.trim()) return;
+    
+    // Only handle title input
+    if (voiceInputStep === 0) {
+      voiceTaskData.title = voiceInputBuffer.trim();
+      document.getElementById('task-title').value = voiceTaskData.title;
+      showToast(`Title set: "${voiceTaskData.title}". You can now fill other fields manually.`);
+      
+      // Stop voice listening and hide icon
+      stopVoiceTaskCreation();
+    }
+  }
+  
+  
+
+  const VoiceController = (() => {
+    const SILENCE_MS = 3000;
+    let activeSession = null;
+
+    function resetSilenceTimer(session) {
+      if (!session) return;
+      session.lastSpeechAt = Date.now();
+      if (session.silenceTimer) {
+        clearTimeout(session.silenceTimer);
+      }
+      session.silenceTimer = setTimeout(() => finalizeSession(session), SILENCE_MS);
+    }
+
+    function cleanupSession(session, skipInterpret = false) {
+      if (!session) return;
+      if (session.silenceTimer) clearTimeout(session.silenceTimer);
+      if (session.vadInterval) clearInterval(session.vadInterval);
+      if (session.vadRaf) cancelAnimationFrame(session.vadRaf);
+
+      if (session.mode === 'droid' && session.rec) {
+        try { session.rec.Stop(); } catch (err) { /* ignore */ }
+      }
+
+      if (session.mode === 'web' && session.recognition) {
+        session.recognition.onend = null;
+        session.recognition.onresult = null;
+        session.recognition.onerror = null;
+        try { session.recognition.stop(); } catch (err) { /* ignore */ }
+      }
+
+      if ((session.mode === 'web' || session.mode === 'vadPrompt') && session.stream) {
+        try {
+          session.stream.getTracks().forEach(track => track.stop());
+        } catch (err) { /* ignore */ }
+      }
+
+      if ((session.mode === 'web' || session.mode === 'vadPrompt') && session.audioCtx) {
+        try { session.audioCtx.close(); } catch (err) { /* ignore */ }
+      }
+
+      toggleVoiceButtonListening(false);
+      if (!skipInterpret) {
+        const transcripts = session.transcripts ? session.transcripts.slice() : [];
+        if (!transcripts.length && session.lastInterim) {
+          transcripts.push(session.lastInterim);
+        }
+
+        if (session.mode === 'vadPrompt') {
+          promptForCommand();
+        } else {
+          interpretVoiceCandidates(transcripts);
+        }
+      }
+    }
+
+    function finalizeSession(session) {
+      if (!activeSession || session !== activeSession || session.finalizing) {
+        return;
+      }
+      session.finalizing = true;
+      const currentSession = activeSession;
+      activeSession = null;
+      cleanupSession(currentSession);
+    }
+
+    function abortSession(session) {
+      if (!activeSession || session !== activeSession) {
+        return;
+      }
+      activeSession = null;
+      cleanupSession(session, true);
+    }
+
+    function ensureAnalyserData(analyser) {
+      const supportsFloat = typeof analyser.getFloatTimeDomainData === 'function';
+      return {
+        supportsFloat,
+        buffer: supportsFloat ? new Float32Array(analyser.fftSize) : new Uint8Array(analyser.fftSize)
+      };
+    }
+
+    function monitorStream(session, analyser, dataObj) {
+      const threshold = 0.015;
+
+      const loop = () => {
+        if (!activeSession || session !== activeSession || session.finalizing) {
+          return;
+        }
+
+        let rms = 0;
+        if (dataObj.supportsFloat) {
+          analyser.getFloatTimeDomainData(dataObj.buffer);
+          let sumSquares = 0;
+          for (let i = 0; i < dataObj.buffer.length; i++) {
+            const sample = dataObj.buffer[i];
+            sumSquares += sample * sample;
+          }
+          rms = Math.sqrt(sumSquares / dataObj.buffer.length);
+        } else {
+          analyser.getByteTimeDomainData(dataObj.buffer);
+          let sumSquares = 0;
+          for (let i = 0; i < dataObj.buffer.length; i++) {
+            const centered = (dataObj.buffer[i] - 128) / 128;
+            sumSquares += centered * centered;
+          }
+          rms = Math.sqrt(sumSquares / dataObj.buffer.length);
+        }
+
+        if (rms > threshold) {
+          resetSilenceTimer(session);
+        }
+
+        session.vadRaf = requestAnimationFrame(loop);
+      };
+
+      loop();
+    }
+
+    function startDroidSession() {
+      if (!window.app || typeof app.CreateSpeechRec !== 'function') {
+        return false;
+      }
+
+      let rec;
+      try {
+        rec = app.CreateSpeechRec();
+      } catch (err) {
+        return false;
+      }
+
+      if (!rec) {
+        return false;
+      }
+
+      const session = {
+        mode: 'droid',
+        transcripts: [],
+        lastInterim: ''
+      };
+
+      activeSession = session;
+      toggleVoiceButtonListening(true);
+
+      try {
+        rec.SetOnResult(result => {
+          if (!activeSession || session !== activeSession) {
+            return;
+          }
+
+          const collected = [];
+          if (Array.isArray(result)) {
+            collected.push(...result);
+          } else if (typeof result === 'string') {
+            collected.push(result);
+          }
+
+          collected.forEach(text => {
+            if (text) {
+              session.transcripts.push(text);
+            }
+          });
+
+          resetSilenceTimer(session);
+        });
+      } catch (err) {
+        abortSession(session);
+        return false;
+      }
+
+      try {
+        if (typeof rec.SetOnError === 'function') {
+          rec.SetOnError(() => finalizeSession(session));
+        }
+      } catch (err) {
+        // ignore SetOnError wiring issues
+      }
+
+      if (typeof rec.IsListening === 'function') {
+        session.vadInterval = setInterval(() => {
+          try {
+            const listening = rec.IsListening();
+            if (listening && !session.pollIndicatedSpeech) {
+              session.pollIndicatedSpeech = true;
+              resetSilenceTimer(session);
+            } else if (!listening) {
+              session.pollIndicatedSpeech = false;
+            }
+          } catch (err) {
+            // ignore polling issues
+          }
+        }, 400);
+      }
+
+      session.rec = rec;
+      resetSilenceTimer(session);
+
+      try {
+        rec.Listen();
+      } catch (err) {
+        abortSession(session);
+        return false;
+      }
+
+      return true;
+    }
+
+    function startWebSession() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        return false;
+      }
+
+      let recognition;
+      try {
+        recognition = new SpeechRecognition();
+      } catch (err) {
+        return false;
+      }
+
+      const session = {
+        mode: 'web',
+        transcripts: [],
+        lastInterim: ''
+      };
+
+      activeSession = session;
+      toggleVoiceButtonListening(true);
+
+      recognition.lang = 'en-US';
+      recognition.interimResults = true;
+      recognition.continuous = true;
+      recognition.maxAlternatives = 1;
+
+      recognition.onresult = event => {
+        if (!activeSession || session !== activeSession || session.finalizing) {
+          return;
+        }
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const result = event.results[i];
+          const transcript = result[0] && result[0].transcript ? result[0].transcript : '';
+          if (!transcript) continue;
+
+          if (result.isFinal) {
+            session.transcripts.push(transcript);
+            session.lastInterim = '';
+          } else {
+            session.lastInterim = transcript;
+          }
+        }
+
+        resetSilenceTimer(session);
+      };
+
+      recognition.onerror = () => finalizeSession(session);
+      recognition.onnomatch = () => finalizeSession(session);
+      recognition.onend = () => finalizeSession(session);
+
+      try {
+        recognition.start();
+      } catch (err) {
+        abortSession(session);
+        return false;
+      }
+
+      session.recognition = recognition;
+      resetSilenceTimer(session);
+
+      if (navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === 'function') {
+        navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+          if (!activeSession || session !== activeSession || session.finalizing) {
+            stream.getTracks().forEach(track => track.stop());
+            return;
+          }
+
+          session.stream = stream;
+
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) {
+            resetSilenceTimer(session);
+            return;
+          }
+
+          const audioCtx = new AudioContext();
+          session.audioCtx = audioCtx;
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 2048;
+          source.connect(analyser);
+
+          const dataObj = ensureAnalyserData(analyser);
+          resetSilenceTimer(session);
+          monitorStream(session, analyser, dataObj);
+        }).catch(() => finalizeSession(session));
+      }
+
+      return true;
+    }
+
+    function startVadPromptSession() {
+      if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function') {
+        promptForCommand();
+        return true;
+      }
+
+      const session = {
+        mode: 'vadPrompt',
+        transcripts: [],
+        lastInterim: ''
+      };
+
+      activeSession = session;
+      toggleVoiceButtonListening(true);
+      resetSilenceTimer(session);
+
+      navigator.mediaDevices.getUserMedia({ audio: true }).then(stream => {
+        if (!activeSession || session !== activeSession || session.finalizing) {
+          stream.getTracks().forEach(track => track.stop());
+          return;
+        }
+
+        session.stream = stream;
+
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) {
+          return;
+        }
+
+        const audioCtx = new AudioContext();
+        session.audioCtx = audioCtx;
+        const source = audioCtx.createMediaStreamSource(stream);
+        const analyser = audioCtx.createAnalyser();
+        analyser.fftSize = 2048;
+        source.connect(analyser);
+
+        const dataObj = ensureAnalyserData(analyser);
+        monitorStream(session, analyser, dataObj);
+      }).catch(() => {
+        abortSession(session);
+        promptForCommand();
+      });
+
+      return true;
+    }
+
+    function startListening() {
+      if (activeSession) {
+        return;
+      }
+
+      if (startDroidSession()) {
+        return;
+      }
+
+      if (startWebSession()) {
+        return;
+      }
+
+      startVadPromptSession();
+    }
+
+    function stopListening() {
+      if (activeSession) {
+        finalizeSession(activeSession);
+      }
+    }
+
+    return { startListening, stopListening };
+  })();
+
+  const voiceButton = document.getElementById('voice-command-button');
+  if (voiceButton) {
+    voiceButton.addEventListener('click', () => VoiceController.startListening());
   }
 
   /* ===== Initialization ===== */
